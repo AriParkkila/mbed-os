@@ -79,7 +79,7 @@ nsapi_error_t AT_CellularNetwork::set_credentials(const char *apn,
     size_t len;
     if (apn) {
         len = strlen(apn);
-        _apn = (char*)malloc(len*sizeof(char));
+        _apn = (char*)malloc(len*sizeof(char)+1);
         if (_apn) {
             memcpy(_apn, apn, len);
         } else {
@@ -89,7 +89,7 @@ nsapi_error_t AT_CellularNetwork::set_credentials(const char *apn,
 
     if (username) {
         len = strlen(username);
-        _uname = (char*)malloc(len*sizeof(char));
+        _uname = (char*)malloc(len*sizeof(char)+1);
         if (_uname) {
             memcpy(_uname, username, len);
         } else {
@@ -99,7 +99,7 @@ nsapi_error_t AT_CellularNetwork::set_credentials(const char *apn,
 
     if (password) {
         len = strlen(password);
-        _pwd = (char*)malloc(len*sizeof(char));
+        _pwd = (char*)malloc(len*sizeof(char)+1);
         if (_pwd) {
             memcpy(_pwd, password, len);
         } else {
@@ -434,7 +434,7 @@ bool AT_CellularNetwork::get_context(nsapi_ip_stack_t requested_stack)
 
     // save the apn
     if (apn_len > 0 && !_apn) {
-        _apn = (char*)malloc(apn_len*sizeof(char));
+        _apn = (char*)malloc(apn_len*sizeof(char)+1);
         if (_apn) {
             memcpy(_apn, apn, apn_len);
         } else {

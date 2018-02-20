@@ -87,13 +87,14 @@ void EasyCellularConnection::set_credentials(const char *apn, const char *uname,
 {
     _credentials_err = init();
 
-    if (_credentials_err == NSAPI_ERROR_OK) {
-        CellularNetwork * network = _cellularConnectionUtil.get_network();
-        if (network) {
-            _credentials_err = network->set_credentials(apn, uname, pwd);
-        } else {
-            tr_error("NO Network...");
-        }
+    if (_credentials_err) {
+        return;
+    }
+    CellularNetwork * network = _cellularConnectionUtil.get_network();
+    if (network) {
+        _credentials_err = network->set_credentials(apn, uname, pwd);
+    } else {
+        tr_error("NO Network...");
     }
 }
 
@@ -139,13 +140,11 @@ nsapi_error_t EasyCellularConnection::check_connect()
 nsapi_error_t EasyCellularConnection::connect()
 {
     // there was an error while setting credentials but it's a void function so check error here...
-    nsapi_error_t err = _credentials_err;
     if (_credentials_err) {
-        _credentials_err = NSAPI_ERROR_OK;
-        return err;
+        return _credentials_err;
     }
 
-    err = check_connect();
+    nsapi_error_t err = check_connect();
     if (err) {
         return err;
     }
@@ -165,6 +164,7 @@ nsapi_error_t EasyCellularConnection::connect()
 
 nsapi_error_t EasyCellularConnection::disconnect()
 {
+    _credentials_err = NSAPI_ERROR_OK;
     _is_connected = false;
     if (!_cellularConnectionUtil.get_network()) {
         return NSAPI_ERROR_NO_CONNECTION;
@@ -180,31 +180,30 @@ bool EasyCellularConnection::is_connected()
 const char *EasyCellularConnection::get_ip_address()
 {
     CellularNetwork *network = _cellularConnectionUtil.get_network();
-    if (network) {
-        return _cellularConnectionUtil.get_network()->get_ip_address();
-    } else {
+    if (!network) {
         return NULL;
     }
+    return _cellularConnectionUtil.get_network()->get_ip_address();
 }
 
 const char *EasyCellularConnection::get_netmask()
 {
     CellularNetwork *network = _cellularConnectionUtil.get_network();
-    if (network) {
-        return network->get_netmask();
+    if (!network) {
+        return NULL;
     }
 
-    return NULL;
+    return network->get_netmask();
 }
 
 const char *EasyCellularConnection::get_gateway()
 {
     CellularNetwork *network = _cellularConnectionUtil.get_network();
-    if (network) {
-        return network->get_gateway();
+    if (!network) {
+        return NULL;
     }
 
-    return NULL;
+    return network->get_gateway();
 }
 
 void EasyCellularConnection::attach(mbed::Callback<void(nsapi_event_t, intptr_t)> status_cb)
