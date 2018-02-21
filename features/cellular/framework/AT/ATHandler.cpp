@@ -86,6 +86,7 @@ ATHandler::ATHandler(FileHandle *fh, EventQueue &queue, int timeout, const char 
     _cmd_start(false)
 {
     //enable_debug(true);
+    queue_event = false;
 
     clear_error();
 
@@ -177,7 +178,9 @@ void ATHandler::event()
     // _processing must be set before filehandle write/read to avoid repetitive sigio events
     if (!_processing) {
         _processing = true;
-        (void) _queue.call(Callback<void(void)>(this, &ATHandler::process_oob));
+        if (_queue.call(Callback<void(void)>(this, &ATHandler::process_oob))) {
+            queue_event = true;
+        }
     }
 }
 
@@ -193,11 +196,18 @@ void ATHandler::lock()
 void ATHandler::unlock()
 {
     _processing = false;
+    if (queue_event) {
+        tr_debug("process_oob to QUEUE from EVENT");
+        queue_event =false;
+    }
 #ifdef AT_HANDLER_MUTEX
     _fileHandleMutex.unlock();
 #endif
     if (_fileHandle->readable() || (_recv_pos < _recv_len)) {
-        (void) _queue.call(Callback<void(void)>(this, &ATHandler::process_oob));
+        if (!_queue.call(Callback<void(void)>(this, &ATHandler::process_oob))) {
+        } else {
+           tr_debug("process_oob to QUEUE from UNLOCK");
+        }
     }
 }
 
@@ -303,11 +313,7 @@ void ATHandler::fill_buffer()
        ssize_t len = _fileHandle->read(_recv_buff + _recv_len, sizeof(_recv_buff) - _recv_len);
         if (len > 0) {
             _recv_len += len;
-           at_debug("\n----------readable----------: %d\n", _recv_len);
-           for (size_t i = _recv_pos; i < _recv_len; i++) {
-               at_debug("%c", _recv_buff[i]);
-           }
-           at_debug("\n----------readable----------\n");
+           print_recv_buffer(__func__);
            return;
        } else if (len != -EAGAIN && len != 0) {
            tr_warn("%s error: %d while reading", __func__, len);
@@ -412,11 +418,7 @@ ssize_t ATHandler::read_bytes(uint8_t *buf, size_t len)
 ssize_t ATHandler::read_string(char *buf, size_t size, bool read_even_stop_tag)
 {
     tr_debug("%s", __func__);
-    at_debug("\n----------read_string buff:----------\n");
-    for (size_t i = _recv_pos; i < _recv_len; i++) {
-        at_debug("%c", _recv_buff[i]);
-    }
-    at_debug("\n----------buff----------\n");
+    print_recv_buffer(__func__);
 
     if (_last_err || !_stop_tag || (_stop_tag->found && read_even_stop_tag == false)) {
         return -1;
@@ -566,7 +568,7 @@ bool ATHandler::match_urc()
         prefix_len = strlen(oob->prefix);
         if (_recv_len >= prefix_len) {
             if (match(oob->prefix, prefix_len)) {
-                tr_debug("URC! %s", oob->prefix);
+                tr_info("URC! %s", oob->prefix);
                 set_scope(InfoType);
                 if(oob->cb){
                     oob->cb();
@@ -675,12 +677,7 @@ void ATHandler::at_error(bool error_code_expected, DeviceErrorType error_type)
 void ATHandler::resp(const char *prefix, bool check_urc)
 {
     tr_debug("%s: %s", __func__, prefix);
-
-    at_debug("\n----------resp buff:----------\n");
-    for (size_t i = _recv_pos; i < _recv_len; i++) {
-        at_debug("%c", _recv_buff[i]);
-    }
-    at_debug("\n----------buff----------\n");
+    print_recv_buffer(__func__);
 
     _prefix_matched = false;
     _urc_matched = false;
@@ -708,6 +705,7 @@ void ATHandler::resp(const char *prefix, bool check_urc)
 
         if (check_urc && match_urc()) {
             _urc_matched = true;
+            tr_info("MATCH URC");
         }
 
         // If no match found, look for CRLF and consume everything up to and including CRLF
@@ -857,7 +855,7 @@ bool ATHandler::consume_to_tag(const char *tag, bool consume_tag)
 
 bool ATHandler::consume_to_stop_tag()
 {
-    tr_debug("%s", __func__);
+    tr_debug("%s, %s", __func__, _stop_tag->tag);
 
     if (!_stop_tag || (_stop_tag && _stop_tag->found) || _error_found) {
         return true;
@@ -930,7 +928,7 @@ void ATHandler::set_string(char *dest, const char *src, size_t src_len)
 const char* ATHandler::mem_str(const char* dest, size_t dest_len, const char* src, size_t src_len)
 {
     if (dest_len > src_len) {
-        for(size_t i = 0; i < dest_len-src_len; ++i) {
+        for(size_t i = 0; i < dest_len-src_len + 1; ++i) {
             if(memcmp(dest+i, src, src_len) == 0) {
                 return dest+i;
             }
@@ -941,7 +939,7 @@ const char* ATHandler::mem_str(const char* dest, size_t dest_len, const char* sr
 
 void ATHandler::cmd_start(const char* cmd)
 {
-    tr_debug("AT> %s", cmd);
+    tr_info("AT> %s", cmd);
 
     if (_last_err != NSAPI_ERROR_OK) {
         return;
@@ -960,7 +958,7 @@ void ATHandler::cmd_start(const char* cmd)
 
 void ATHandler::write_int(int32_t param)
 {
-    tr_debug("write_int: %d", param);
+    tr_debug("%s: %d", __func__, param);
     // do common checks before sending subparameter
     if (check_cmd_send() == false) {
         return;
@@ -982,7 +980,7 @@ void ATHandler::write_int(int32_t param)
 
 void ATHandler::write_string(const char* param, bool useQuotations)
 {
-    tr_debug("write_string: %s, %d", param, useQuotations);
+    tr_debug("%s: %s, %d", __func__, param, useQuotations);
     // do common checks before sending subparameter
     if (check_cmd_send() == false) {
         return;
@@ -1084,4 +1082,19 @@ void ATHandler::flush()
         fill_buffer();
     }
     reset_buffer();
+}
+
+void ATHandler::print_recv_buffer(const char *src)
+{
+    at_debug("\n----------%s buff:----------\n", src);
+    for (size_t i = _recv_pos; i < _recv_len; i++) {
+        if (_recv_buff[i] == 13) {
+            at_debug("CR");
+        } else if (_recv_buff[i] == 10) {
+            at_debug("LF");
+        } else {
+            at_debug("%c", _recv_buff[i]);
+        }
+    }
+    at_debug("\n----------buff----------\n");
 }

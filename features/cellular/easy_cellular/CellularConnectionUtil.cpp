@@ -153,7 +153,7 @@ bool CellularConnectionUtil::open_network()
     if (!_network) {
         _network = _cellularDevice->open_network(_serial);
     }
-    return (_network != NULL);
+    return (_network != NULL && _network->set_stack_type(IPV4_STACK));
 }
 
 bool CellularConnectionUtil::set_network_registration(char *plmn)

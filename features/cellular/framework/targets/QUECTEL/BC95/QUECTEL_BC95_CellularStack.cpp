@@ -18,6 +18,8 @@
 #include "QUECTEL_BC95_CellularStack.h"
 #include "CellularUtil.h"
 
+#include "CellularLog.h"
+
 using namespace mbed;
 using namespace mbed_cellular_util;
 
@@ -142,6 +144,9 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_sendto_impl(CellularSoc
     char hexstr[BC95_MAX_PACKET_SIZE*2 + 1] = {0};
     char_str_to_hex_str((const char*)data, size, hexstr);
 
+
+    _at.enable_debug(true);
+
     _at.cmd_start("AT+NSOST=");
     _at.write_int(socket->id);
     _at.write_string(address.get_ip_address(), false);
@@ -184,6 +189,8 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_recvfrom_impl(CellularS
     _at.skip_param();
 
     if (!recv_len || (recv_len == -1) || (_at.get_last_error() != NSAPI_ERROR_OK)) {
+
+        tr_info("WOULD BLOCK %d, %d", recv_len, _at.get_last_error());
         return NSAPI_ERROR_WOULD_BLOCK;
     }
 

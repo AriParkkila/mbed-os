@@ -68,6 +68,7 @@ class ATHandler
 {
 
 public:
+    bool queue_event;
     /** Constructor
      *
      *  @param fh               file handle used for reading AT responses and writing AT commands
@@ -467,6 +468,9 @@ private:
      * @return pointer to first occurrence of src in dest
      */
     const char* mem_str(const char* dest, size_t dest_len, const char* src, size_t src_len);
+
+    //
+    void print_recv_buffer(const char *src);
 };
 
 } // namespace mbed

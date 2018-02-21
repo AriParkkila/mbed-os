@@ -200,6 +200,7 @@ nsapi_size_or_error_t QUECTEL_BG96_CellularStack::socket_sendto_impl(CellularSoc
     _at.resp_stop();
 
     // Send
+    _at.enable_debug(true);
     _at.cmd_start("AT+QISEND=");
     _at.write_int(socket->id);
     _at.write_int(size);
@@ -209,6 +210,7 @@ nsapi_size_or_error_t QUECTEL_BG96_CellularStack::socket_sendto_impl(CellularSoc
 
     _at.resp_start(">");
     _at.write_bytes((uint8_t*)data, size);
+
     _at.resp_start();
     _at.set_stop_tag("\r\n");
     _at.resp_stop();
