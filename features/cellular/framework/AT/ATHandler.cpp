@@ -568,7 +568,7 @@ bool ATHandler::match_urc()
             if (match(oob->prefix, prefix_len)) {
                 tr_debug("URC! %s", oob->prefix);
                 set_scope(InfoType);
-                if(oob->cb){
+                if (oob->cb) {
                     oob->cb();
                 }
                 information_response_stop();
