@@ -17,6 +17,7 @@
 
 #include "QUECTEL/BG96/QUECTEL_BG96_CellularStack.h"
 #include "CellularLog.h"
+#include "CellularUtil.h"
 
 using namespace mbed;
 
@@ -203,7 +204,9 @@ nsapi_size_or_error_t QUECTEL_BG96_CellularStack::socket_sendto_impl(CellularSoc
     _at.cmd_start("AT+QISEND=");
     _at.write_int(socket->id);
     _at.write_int(size);
-    _at.write_string(address.get_ip_address());
+    char addr[] = "2a05:d018:21f:3800:8584:60f8:bc9f:e614";//"52.215.34.155"; //"42.5.208.24.33.15.56.0.133.132.96.248.188.159.230.20";
+    //mbed_cellular_util::convert_ipv6(addr);
+    _at.write_string(addr);
     _at.write_int(address.get_port());
     _at.cmd_stop();
 

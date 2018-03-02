@@ -663,9 +663,9 @@ void ATHandler::at_error(bool error_code_expected, DeviceErrorType error_type)
             set_3gpp_error(err, error_type);
             _last_at_err.errCode = err;
             _last_at_err.errType = error_type;
-            tr_debug("ATHandler ERROR: %d", err);
+            tr_info("ATHandler ERROR: %d", err);
         } else {
-            tr_debug("ATHandler ERROR reading failed");
+            tr_info("ATHandler ERROR reading failed");
         }
     }
 
@@ -941,7 +941,8 @@ const char* ATHandler::mem_str(const char* dest, size_t dest_len, const char* sr
 
 void ATHandler::cmd_start(const char* cmd)
 {
-    tr_debug("AT> %s", cmd);
+    //wait(1);
+    tr_info("AT> %s", cmd);
 
     if (_last_err != NSAPI_ERROR_OK) {
         return;

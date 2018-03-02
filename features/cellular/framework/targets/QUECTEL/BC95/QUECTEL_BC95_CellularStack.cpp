@@ -17,6 +17,7 @@
 
 #include "QUECTEL_BC95_CellularStack.h"
 #include "CellularUtil.h"
+#include "CellularLog.h"
 
 using namespace mbed;
 using namespace mbed_cellular_util;
@@ -78,6 +79,8 @@ nsapi_error_t QUECTEL_BC95_CellularStack::socket_close_impl(int sock_id)
     _at.resp_start();
     _at.resp_stop();
 
+    tr_info("Socket id: %d closed: %d", sock_id, _at.get_last_error());
+
     return _at.get_last_error();
 }
 
@@ -124,12 +127,16 @@ nsapi_error_t QUECTEL_BC95_CellularStack::create_socket_impl(CellularSocket *soc
     for (int i = 0; i < BC95_SOCKET_MAX; i++) {
         CellularSocket *sock = _socket[i];
         if (sock && sock->created && sock->id == sock_id) {
+            tr_error("Duplicate socket!");
             return NSAPI_ERROR_NO_SOCKET;
         }
     }
 
+    tr_info("Socket created: id-%d modem_id-%d",  socket->id, sock_id);
     socket->id = sock_id;
     socket->created = true;
+
+    //_at.enable_debug(true);
 
     return NSAPI_ERROR_OK;
 }
@@ -150,8 +157,10 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_sendto_impl(CellularSoc
     _at.write_string(hexstr, false);
     _at.cmd_stop();
     _at.resp_start();
-    socket->id = _at.read_int();
+    _at.read_int();
+    tr_info("sock_id: %d" , socket->id);
     sent_len = _at.read_int();
+    tr_info("sent_len: %d" , sent_len);
     _at.resp_stop();
 
     if (_at.get_last_error() == NSAPI_ERROR_OK) {
@@ -181,7 +190,8 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_recvfrom_impl(CellularS
     recv_len = _at.read_int();
     _at.read_string(hexstr, sizeof(hexstr));
     // remaining length
-    _at.skip_param();
+    //_at.skip_param();
+    _at.resp_stop();
 
     if (!recv_len || (recv_len == -1) || (_at.get_last_error() != NSAPI_ERROR_OK)) {
         return NSAPI_ERROR_WOULD_BLOCK;
