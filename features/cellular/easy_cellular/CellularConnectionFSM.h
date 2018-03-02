@@ -138,6 +138,7 @@ private:
     bool set_network_registration(char *plmn = 0);
     bool get_attach_network(CellularNetwork::AttachStatus &status);
     bool set_attach_network();
+    bool is_automatic_registering();
 
 private:
     friend class EasyCellularConnection;
