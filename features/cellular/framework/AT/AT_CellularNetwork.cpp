@@ -562,6 +562,19 @@ nsapi_error_t AT_CellularNetwork::set_registration(const char *plmn)
     return _at.unlock_return_error();
 }
 
+nsapi_error_t AT_CellularNetwork::get_network_registering_mode(NWRegisteringMode& mode)
+{
+    _at.lock();
+    _at.cmd_start("AT+COPS?");
+    _at.cmd_stop();
+    _at.resp_start("COPS:");
+    mode = (NWRegisteringMode)_at.read_int();
+    _at.resp_stop();
+
+    return _at.unlock_return_error();
+}
+
+
 nsapi_error_t AT_CellularNetwork::get_registration_status(RegistrationType type, RegistrationStatus &status)
 {
     int i = (int)type;

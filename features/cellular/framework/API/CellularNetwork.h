@@ -201,12 +201,28 @@ public:
     };
     typedef CellularList<pdpcontext_params_t> pdpContextList_t;
 
+    /* Network registering mode */
+    enum NWRegisteringMode {
+        NWModeAutomatic = 0,    // automatic registering
+        NWModeManual,           // manual registering with plmn
+        NWModeDeRegister,       // deregister from network
+        NWModeSetOnly,          // set only <format> (for read command +COPS?), do not attempt registration/deregistration
+        NWModeManualAutomatic   // if manual fails, fallback to automatic
+    };
+
     /** Request registering to network.
      *
      *  @param plmn     format is in numeric format or 0 for automatic network registration
      *  @return         zero on success
      */
     virtual nsapi_error_t set_registration(const char *plmn = 0) = 0;
+
+    /** Get the current network registering mode
+     *
+     *  @param      on successful return contains the current network registering mode
+     *  @return     zero on success
+     */
+    virtual nsapi_error_t get_network_registering_mode(NWRegisteringMode& mode) = 0;
 
     /** Gets the network registration status.
      *

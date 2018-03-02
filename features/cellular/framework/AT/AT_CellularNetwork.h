@@ -62,6 +62,8 @@ protected:
 public: // CellularNetwork
     virtual nsapi_error_t set_registration(const char *plmn = 0);
 
+    virtual nsapi_error_t get_network_registering_mode(NWRegisteringMode& mode);
+
     virtual nsapi_error_t get_registration_status(RegistrationType type, RegistrationStatus &status);
 
     virtual nsapi_error_t set_attach(int timeout = 10*1000);

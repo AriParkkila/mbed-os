@@ -124,7 +124,7 @@ bool CellularConnectionFSM::open_sim()
     CellularSIM::SimState state = CellularSIM::SimStateUnknown;
     // wait until SIM is readable
     // here you could add wait(secs) if you know start delay of your SIM
-    while (_sim->get_sim_state(state) != NSAPI_ERROR_OK || state == CellularSIM::SimStateUnknown) {
+    if (_sim->get_sim_state(state) != NSAPI_ERROR_OK || state == CellularSIM::SimStateUnknown) {
         tr_info("Waiting for SIM (state %d)...", state);
         return false;
     }
@@ -229,6 +229,17 @@ bool CellularConnectionFSM::get_network_registration(CellularNetwork::Registrati
     return true;
 }
 
+bool CellularConnectionFSM::is_automatic_registering()
+{
+    CellularNetwork::NWRegisteringMode mode;
+    nsapi_error_t err = _network->get_network_registering_mode(mode);
+    tr_info("automatic registering err: %d, mode: %d", err, mode);
+    if (err == NSAPI_ERROR_OK && mode == CellularNetwork::NWModeAutomatic) {
+        return true;
+    }
+    return false;
+}
+
 bool CellularConnectionFSM::get_attach_network(CellularNetwork::AttachStatus &status)
 {
     nsapi_error_t err = _network->get_attach(status);
@@ -286,7 +297,7 @@ void CellularConnectionFSM::event()
                 _next_state = STATE_DEVICE_READY;
                 _retry_count = 0;
             } else {
-                if (++_retry_count <= RETRY_COUNT_DEFAULT) {
+                if (++_retry_count < RETRY_COUNT_DEFAULT) {
                     tr_warn("Power ON retry %d", _retry_count);
                     event_timeout = 3 * 1000;
                 } else {
@@ -305,7 +316,7 @@ void CellularConnectionFSM::event()
             } else {
                 tr_info("Waiting for cellular device (retry %d/%d, timeout %d ms)", _retry_count, RETRY_COUNT_DEFAULT,
                         TIMEOUT_POWER_ON);
-                if (_retry_count++ <= RETRY_COUNT_DEFAULT) {
+                if (_retry_count++ < RETRY_COUNT_DEFAULT) {
                     event_timeout = 3 * 1000;
                 } else {
                     report_failure("Power");
@@ -322,7 +333,7 @@ void CellularConnectionFSM::event()
                 _state_retry_count = 0;
                 tr_info("Check for network registration");
             } else {
-                if (_retry_count++ <= RETRY_COUNT_DEFAULT) {
+                if (_retry_count++ < RETRY_COUNT_DEFAULT) {
                     tr_warn("Waiting for SIM %d/%d", _retry_count, RETRY_COUNT_DEFAULT);
                     event_timeout = 3 * 1000;
                 } else {
@@ -336,27 +347,29 @@ void CellularConnectionFSM::event()
             CellularNetwork::RegistrationStatus status;
             bool is_registered;
             _next_state = STATE_REGISTER_NETWORK;
-            for (int type = 0; type < CellularNetwork::C_MAX; type++) {
-                if (get_network_registration((CellularNetwork::RegistrationType) type, status, is_registered)) {
-                    tr_debug("get_network_registration: type=%d, status=%d", type, status);
-                    if (is_registered) {
-                        tr_info("Registered to cellular network (type %d, status %d)", type, status);
-                        _next_state = STATE_ATTACHING_NETWORK;
-                        _retry_count = 0;
-                        _state_retry_count = 0;
-                        event_timeout = 0;
-                        tr_info("Check cellular network attach state");
-                        break;
-                    } else {
-                        if (_retry_count < 180) {
-                            event_timeout = 1000;
-                            _next_state = STATE_REGISTERING_NETWORK;
-                            tr_info("Waiting for registration %d/180 (type %d, status %d)", _retry_count, type, status);
-                        } else {
-                            tr_info("Start cellular registration");
-                            _next_state = STATE_REGISTER_NETWORK;
+            if (!is_automatic_registering()) {
+                for (int type = 0; type < CellularNetwork::C_MAX; type++) {
+                    if (get_network_registration((CellularNetwork::RegistrationType) type, status, is_registered)) {
+                        tr_debug("get_network_registration: type=%d, status=%d", type, status);
+                        if (is_registered) {
+                            tr_info("Registered to cellular network (type %d, status %d)", type, status);
+                            _next_state = STATE_ATTACHING_NETWORK;
                             _retry_count = 0;
+                            _state_retry_count = 0;
+                            event_timeout = 0;
+                            tr_info("Check cellular network attach state");
                             break;
+                        } else {
+                            if (_retry_count < TIMEOUT_REGISTRATION/1000) {
+                                event_timeout = 1000;
+                                _next_state = STATE_REGISTERING_NETWORK;
+                                tr_info("Waiting for registration %d/180 (type %d, status %d)", _retry_count, type, status);
+                            } else {
+                                tr_info("Start cellular registration");
+                                _next_state = STATE_REGISTER_NETWORK;
+                                _retry_count = 0;
+                                break;
+                            }
                         }
                     }
                 }
