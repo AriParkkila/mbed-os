@@ -139,7 +139,7 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_sendto_impl(CellularSoc
 {
     int sent_len = 0;
 
-    char hexstr[BC95_MAX_PACKET_SIZE*2 + 1] = {0};
+    char *hexstr = new char[BC95_MAX_PACKET_SIZE*2 + 1];
     char_str_to_hex_str((const char*)data, size, hexstr);
 
     _at.cmd_start("AT+NSOST=");
@@ -147,12 +147,14 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_sendto_impl(CellularSoc
     _at.write_string(address.get_ip_address(), false);
     _at.write_int(address.get_port());
     _at.write_int(size);
-    _at.write_string(hexstr, false);
+    _at.write_bytes((uint8_t*)hexstr, size);
     _at.cmd_stop();
     _at.resp_start();
     socket->id = _at.read_int();
     sent_len = _at.read_int();
     _at.resp_stop();
+
+    delete hexstr;
 
     if (_at.get_last_error() == NSAPI_ERROR_OK) {
         return sent_len;
@@ -167,7 +169,7 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_recvfrom_impl(CellularS
     nsapi_size_or_error_t recv_len=0;
     int port;
     char ip_address[NSAPI_IP_SIZE];
-    char hexstr[BC95_MAX_PACKET_SIZE*2 + 1];
+    char *hexstr = new char[BC95_MAX_PACKET_SIZE*2 + 1];
 
     _at.cmd_start("AT+NSORF=");
     _at.write_int(socket->id);
@@ -179,11 +181,12 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_recvfrom_impl(CellularS
     _at.read_string(ip_address, sizeof(ip_address));
     port = _at.read_int();
     recv_len = _at.read_int();
-    _at.read_string(hexstr, sizeof(hexstr));
+    _at.read_bytes((uint8_t*)hexstr, recv_len);
     // remaining length
     _at.skip_param();
 
     if (!recv_len || (recv_len == -1) || (_at.get_last_error() != NSAPI_ERROR_OK)) {
+        delete hexstr;
         return NSAPI_ERROR_WOULD_BLOCK;
     }
 
@@ -196,5 +199,6 @@ nsapi_size_or_error_t QUECTEL_BC95_CellularStack::socket_recvfrom_impl(CellularS
         hex_str_to_char_str((const char*) hexstr, recv_len*2, (char*)buffer);
     }
 
+    delete hexstr;
     return recv_len;
 }
