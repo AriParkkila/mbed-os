@@ -35,11 +35,14 @@
 
 #define RETRY_COUNT_DEFAULT 3
 
-namespace mbed {
+#define DEVICE_INFO_SIZE (2048+1) // according to 3GPP TS 27.007 may be up to 2048
+
+namespace mbed
+{
 
 CellularConnectionFSM::CellularConnectionFSM() :
-        _serial(0), _state(STATE_INIT), _next_state(_state), _status_callback(0), _network(0), _power(0), _sim(0),
-        _queue(8 * EVENTS_EVENT_SIZE), _queue_thread(0), _retry_count(0), _state_retry_count(0), _at_queue(8 * EVENTS_EVENT_SIZE)
+    _serial(0), _state(STATE_INIT), _next_state(_state), _status_callback(0), _network(0), _power(0), _sim(0),
+    _queue(8 * EVENTS_EVENT_SIZE), _queue_thread(0), _retry_count(0), _state_retry_count(0), _at_queue(8 * EVENTS_EVENT_SIZE)
 {
     memset(_sim_pin, 0, sizeof(_sim_pin));
 #if MBED_CONF_CELLULAR_RANDOM_MAX_START_DELAY == 0
@@ -60,7 +63,7 @@ CellularConnectionFSM::CellularConnectionFSM() :
     _retry_timeout_array[8] = 600;
     _retry_timeout_array[9] = TIMEOUT_NETWORK_MAX;
     _retry_array_length = MAX_RETRY_ARRAY_SIZE;
-    
+
     _cellularDevice = new CELLULAR_DEVICE(_at_queue);
 }
 
@@ -158,17 +161,17 @@ bool CellularConnectionFSM::open_sim()
 void CellularConnectionFSM::device_ready()
 {
     CellularInformation *info = _cellularDevice->open_information(_serial);
-    char device_info_buf[2048]; // may be up to 2048 according to 3GPP
-
-    if (info->get_manufacturer(device_info_buf, sizeof(device_info_buf)) == NSAPI_ERROR_OK) {
-        tr_info("Cellular device manufacturer: %s", device_info_buf);
+    char *device_info = new char[DEVICE_INFO_SIZE];
+    if (info->get_manufacturer(device_info, DEVICE_INFO_SIZE) == NSAPI_ERROR_OK) {
+        tr_info("Cellular device manufacturer: %s", device_info);
     }
-    if (info->get_model(device_info_buf, sizeof(device_info_buf)) == NSAPI_ERROR_OK) {
-        tr_info("Cellular device model: %s", device_info_buf);
+    if (info->get_model(device_info, DEVICE_INFO_SIZE) == NSAPI_ERROR_OK) {
+        tr_info("Cellular device model: %s", device_info);
     }
-    if (info->get_revision(device_info_buf, sizeof(device_info_buf)) == NSAPI_ERROR_OK) {
-        tr_info("Cellular device revision: %s", device_info_buf);
+    if (info->get_revision(device_info, DEVICE_INFO_SIZE) == NSAPI_ERROR_OK) {
+        tr_info("Cellular device revision: %s", device_info);
     }
+    delete device_info;
 }
 
 bool CellularConnectionFSM::set_network_registration(char *plmn)
@@ -195,19 +198,19 @@ bool CellularConnectionFSM::get_network_registration(CellularNetwork::Registrati
     switch (status) {
         case CellularNetwork::RegisteredRoaming:
             is_roaming = true;
-            // fall-through
+        // fall-through
         case CellularNetwork::RegisteredHomeNetwork:
             is_registered = true;
             break;
         case CellularNetwork::RegisteredSMSOnlyRoaming:
             is_roaming = true;
-            // fall-through
+        // fall-through
         case CellularNetwork::RegisteredSMSOnlyHome:
             tr_warn("SMS only network registration!");
             break;
         case CellularNetwork::RegisteredCSFBNotPreferredRoaming:
             is_roaming = true;
-            // fall-through
+        // fall-through
         case CellularNetwork::RegisteredCSFBNotPreferredHome:
             tr_warn("Not preferred network registration!");
             break;
@@ -498,7 +501,7 @@ nsapi_error_t CellularConnectionFSM::start_dispatch()
 
     MBED_ASSERT(!_queue_thread);
 
-    _queue_thread = new rtos::Thread;
+    _queue_thread = new rtos::Thread(osPriorityNormal, 1024);
     if (!_queue_thread) {
         stop();
         return NSAPI_ERROR_NO_MEMORY;
