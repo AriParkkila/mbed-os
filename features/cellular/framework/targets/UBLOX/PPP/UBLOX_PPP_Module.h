@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Arm Limited and affiliates.
+ * Copyright (c) 2018, Arm Limited and affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,28 @@
  * limitations under the License.
  */
 
-#ifndef UBLOX_PPP_H_
-#define UBLOX_PPP_H_
+#ifndef UBLOX_PPP_MODULE_H_
+#define UBLOX_PPP_MODULE_H_
 
-#include "AT_CellularDevice.h"
+#include "nsapi_types.h"
 
 namespace mbed {
 
-class UBLOX_PPP : public AT_CellularDevice {
+class FileHandle;
 
+class UBLOX_PPP_Module {
 public:
-    UBLOX_PPP(events::EventQueue &queue);
-    virtual ~UBLOX_PPP();
+    enum Model {
+        ModelUnknown = 0,
+        ModelSaraR4,
+    };
+    static nsapi_error_t detect_model(const char *model);
+    static Model get_model();
 
-public: // CellularDevice
-    virtual CellularNetwork *open_network(FileHandle *fh);
-    virtual CellularPower *open_power(FileHandle *fh);
-    virtual nsapi_error_t init_module(FileHandle *fh);
+private:
+    static Model _model;
 };
-
-MBED_DEPRECATED_SINCE("mbed-os-5.9", "This API will be deprecated, Use UBLOX_PPP instead of UBLOX_LISA_U.")
-typedef UBLOX_PPP UBLOX_LISA_U;
 
 } // namespace mbed
 
-#endif // UBLOX_PPP_H_
+#endif // UBLOX_PPP_MODULE_H_

@@ -35,8 +35,7 @@ public: //from CellularPower
 };
 
 MBED_DEPRECATED_SINCE("mbed-os-5.9", "This API will be deprecated, Use UBLOX_PPP_CellularPower instead of UBLOX_LISA_U_CellularPower.")
-class UBLOX_LISA_U_CellularPower  : public UBLOX_PPP_CellularPower {
-};
+typedef UBLOX_PPP_CellularPower UBLOX_LISA_U_CellularPower;
 
 } // namespace mbed
 

@@ -18,6 +18,9 @@
 #include "UBLOX_PPP.h"
 #include "UBLOX_PPP_CellularNetwork.h"
 #include "UBLOX_PPP_CellularPower.h"
+#include "UBLOX_PPP_Module.h"
+
+#include "CellularLog.h"
 
 using namespace mbed;
 using namespace events;
@@ -56,4 +59,20 @@ CellularPower *UBLOX_PPP::open_power(FileHandle *fh)
         }
     }
     return _power;
+}
+
+nsapi_error_t UBLOX_PPP::init_module(FileHandle *fh)
+{
+    CellularInformation *information = open_information(fh);
+    if (!information) {
+        return NSAPI_ERROR_NO_MEMORY;
+    }
+    char model[sizeof("SARA-R4") + 1]; // sizeof need to be long enough to hold just the model text
+    nsapi_error_t ret = information->get_model(model, sizeof(model));
+    close_information();
+    if (ret != NSAPI_ERROR_OK) {
+        tr_error("Cellular model not found!");
+        return NSAPI_ERROR_DEVICE_ERROR;
+    }
+    return UBLOX_PPP_Module::detect_model(model);
 }

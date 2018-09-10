@@ -36,8 +36,7 @@ protected:
 };
 
 MBED_DEPRECATED_SINCE("mbed-os-5.9", "This API will be deprecated, Use UBLOX_PPP_CellularNetwork instead of UBLOX_LISA_U_CellularNetwork.")
-class UBLOX_LISA_U_CellularNetwork : public UBLOX_PPP_CellularNetwork {
-};
+typedef UBLOX_PPP_CellularNetwork UBLOX_LISA_U_CellularNetwork;
 
 } // namespace mbed
 
