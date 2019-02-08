@@ -81,7 +81,7 @@ int fetch_stats()
 // Test setup
 utest::v1::status_t greentea_setup(const size_t number_of_cases)
 {
-    GREENTEA_SETUP(480, "default_auto");
+    GREENTEA_SETUP(10 * 60, "default_auto");
     _ifup();
     return greentea_test_setup_handler(number_of_cases);
 }
@@ -110,7 +110,6 @@ Case cases[] = {
     Case("UDPSOCKET_BIND_WRONG_TYPE", UDPSOCKET_BIND_WRONG_TYPE),
     Case("UDPSOCKET_BIND_UNOPENED", UDPSOCKET_BIND_UNOPENED),
     Case("UDPSOCKET_SENDTO_INVALID", UDPSOCKET_SENDTO_INVALID),
-    Case("UDPSOCKET_ECHOTEST", UDPSOCKET_ECHOTEST),
     Case("UDPSOCKET_ECHOTEST_BURST", UDPSOCKET_ECHOTEST_BURST),
     Case("UDPSOCKET_ECHOTEST_BURST_NONBLOCK", UDPSOCKET_ECHOTEST_BURST_NONBLOCK),
     Case("UDPSOCKET_SENDTO_REPEAT", UDPSOCKET_SENDTO_REPEAT),

@@ -41,8 +41,11 @@ void UDPSOCKET_SENDTO_TIMEOUT()
     int sent = sock.sendto(udp_addr, tx_buffer, sizeof(tx_buffer));
     timer.stop();
     TEST_ASSERT_EQUAL(sizeof(tx_buffer), sent);
+#if MBED_CONF_TARGET_NETWORK_DEFAULT_INTERFACE_TYPE == CELLULAR
+    TEST_ASSERT(timer.read_ms() <= 1000);
+#else
     TEST_ASSERT(timer.read_ms() <= 100);
-
+#endif
     sock.set_timeout(1000);
 
     timer.reset();

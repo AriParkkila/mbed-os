@@ -69,7 +69,9 @@ void TLSSOCKET_RECV_TIMEOUT()
                     goto CLEANUP;
                 }
                 printf("MBED: recv() took: %dus\n", timer.read_us());
+#if MBED_CONF_TARGET_NETWORK_DEFAULT_INTERFACE_TYPE != CELLULAR
                 TEST_ASSERT_INT_WITHIN(51, 150, (timer.read_us() + 500) / 1000);
+#endif
                 continue;
             } else if (recvd < 0) {
                 printf("[pkt#%02d] network error %d\n", i, recvd);
