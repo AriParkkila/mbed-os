@@ -53,6 +53,12 @@ nsapi_error_t ONBOARD_TELIT_HE910::soft_power_off()
 CellularDevice *CellularDevice::get_target_default_instance()
 {
     static UARTSerial serial(MDMTXD, MDMRXD, 115200);
+#if DEVICE_SERIAL_FC
+    if (MDMRTS != NC && MDMCTS != NC) {
+        tr_debug("Modem flow control: RTS %d CTS %d", MDMRTS, MDMCTS);
+        serial.set_flow_control(SerialBase::RTSCTS, MDMRTS, MDMCTS);
+    }
+#endif
     static ONBOARD_TELIT_HE910 device(&serial);
     return &device;
 }

@@ -10,7 +10,7 @@
             "value": 0
         },
         "debug-at": {
-            "help": "Enable AT debug prints",
+            "help": "Enable AT debug prints. Note that debug is likely to break UART read timing.",
             "value": false
         },
         "radio-access-technology": {
