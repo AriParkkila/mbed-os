@@ -92,6 +92,7 @@ protected:
             _cb(NULL),
             _data(NULL),
             created(false),
+            closed(false),
             started(false),
             tx_ready(false),
             rx_avail(false),
@@ -108,6 +109,7 @@ protected:
         void (*_cb)(void *);
         void *_data;
         bool created; // socket has been created on modem stack
+        bool closed; // socket has been closed by a peer
         bool started; // socket has been opened on modem stack
         bool tx_ready; // socket is ready for sending on modem stack
         bool rx_avail; // socket has data for reading on modem stack
