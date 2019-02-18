@@ -108,6 +108,7 @@ AT_CellularNetwork::~AT_CellularNetwork()
         }
     }
 
+    _at.set_urc_handler("+CCIOTOPTI:", 0);
     _at.set_urc_handler("NO CARRIER", 0);
     _at.set_urc_handler("+CGEV:", 0);
 }

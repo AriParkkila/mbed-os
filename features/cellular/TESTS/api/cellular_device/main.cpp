@@ -91,17 +91,6 @@ static void other_methods()
     device->modem_debug_on(false);
 
     TEST_ASSERT(device->get_queue() != NULL);
-    TEST_ASSERT(device->hard_power_on() == NSAPI_ERROR_OK);
-    TEST_ASSERT(device->soft_power_on() == NSAPI_ERROR_OK);
-    wait(5);
-    TEST_ASSERT_EQUAL_INT(device->init(), NSAPI_ERROR_OK);
-}
-
-static void shutdown()
-{
-    TEST_ASSERT(device->shutdown() == NSAPI_ERROR_OK);
-    TEST_ASSERT(device->soft_power_off() == NSAPI_ERROR_OK);
-    TEST_ASSERT(device->hard_power_off() == NSAPI_ERROR_OK);
 }
 
 static void callback_func(nsapi_event_t ev, intptr_t ptr)
@@ -144,7 +133,9 @@ static void init_to_device_ready_state()
     op = OP_DEVICE_READY;
     TEST_ASSERT_EQUAL_INT(NSAPI_ERROR_OK, device->hard_power_on());
     TEST_ASSERT_EQUAL_INT(NSAPI_ERROR_OK, device->soft_power_on());
-    TEST_ASSERT_EQUAL_INT(NSAPI_ERROR_OK, device->init());
+    while (NSAPI_ERROR_OK != device->init()) { // wait until success or test timeout
+        wait(1);
+    }
     TEST_ASSERT_EQUAL_INT(NSAPI_ERROR_OK, device->set_device_ready());
 
     int sema_err = semaphore.wait(TIME_OUT_DEVICE_READY);
@@ -176,6 +167,14 @@ static void continue_to_attach_state()
 
     int sema_err = semaphore.wait(TIME_OUT_REGISTER); // cellular network attach may take several minutes
     TEST_ASSERT_EQUAL_INT(1, sema_err);
+}
+
+static void shutdown()
+{
+    TEST_ASSERT(device->shutdown() == NSAPI_ERROR_OK);
+    TEST_ASSERT(device->soft_power_off() == NSAPI_ERROR_OK);
+    TEST_ASSERT(device->hard_power_off() == NSAPI_ERROR_OK);
+    init_to_device_ready_state();
 }
 
 using namespace utest::v1;

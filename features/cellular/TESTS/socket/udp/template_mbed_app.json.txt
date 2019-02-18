@@ -4,12 +4,12 @@
             "help": "PIN code",
             "value": "\"1234\""
         },
-        "cellular_plmn": {
-            "help": "plmn to select manual registration",
+        "apn": {
+            "help": "The APN string to use for this SIM/network, set to 0 if none. Must be first with 'value' for CI.",
             "value": 0
         },
-        "apn": {
-            "help": "The APN string to use for this SIM/network, set to 0 if none",
+        "cellular_plmn": {
+            "help": "plmn to select manual registration",
             "value": 0
         },
         "username": {
