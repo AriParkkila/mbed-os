@@ -20,6 +20,26 @@
         "control-plane-opt": {
             "help": "Enables control plane CIoT EPS optimization",
             "value": false
+        },
+        "timeout-power-on": {
+            "help": "Timeout for device power on, 0 to not change",
+            "value": 1000
+        },
+        "timeout-sim-pin": {
+            "help": "Timeout for SIM pin query response from the modem, 0 to not change",
+            "value": 1000
+        },
+        "timeout-network-selection": {
+            "help": "Timeout for cellular selection response from the modem, 0 to not change",
+            "value": 180000
+        },
+        "timeout-network-attach": {
+            "help": "Timeout for packet network attach response from the modem, 0 to not change",
+            "value": 10000
+        },
+        "timeout-network-connect": {
+            "help": "Timeout for network connect and PDP context activation response from the modem, 0 to not change",
+            "value": 60000
         }
     }
 }

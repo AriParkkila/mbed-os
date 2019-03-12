@@ -25,13 +25,6 @@
 #define MBED_TRACE_MAX_LEVEL TRACE_LEVEL_INFO
 #endif
 
-// timeout to wait for AT responses
-#define TIMEOUT_POWER_ON     (1*1000)
-#define TIMEOUT_SIM_PIN      (1*1000)
-#define TIMEOUT_NETWORK      (10*1000)
-#define TIMEOUT_CONNECT      (60*1000)
-#define TIMEOUT_REGISTRATION (180*1000)
-
 // maximum time when retrying network register, attach and connect in seconds ( 20minutes )
 #define TIMEOUT_NETWORK_MAX (20*60)
 
@@ -299,8 +292,10 @@ void CellularStateMachine::retry_state_or_fail()
 
 void CellularStateMachine::state_init()
 {
-    _cellularDevice.set_timeout(TIMEOUT_POWER_ON);
-    tr_info("Start connecting (timeout %d s)", TIMEOUT_POWER_ON / 1000);
+#if MBED_CONF_CELLULAR_TIMEOUT_POWER_ON
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_POWER_ON);
+    tr_debug("Wait for modem response (timeout %d s)", MBED_CONF_CELLULAR_TIMEOUT_POWER_ON / 1000);
+#endif
     _cb_data.error = _cellularDevice.is_ready();
     _status = _cb_data.error ? 0 : DEVICE_READY;
     if (_cb_data.error != NSAPI_ERROR_OK) {
@@ -316,8 +311,10 @@ void CellularStateMachine::state_init()
 
 void CellularStateMachine::state_power_on()
 {
-    _cellularDevice.set_timeout(TIMEOUT_POWER_ON);
-    tr_info("Modem power ON (timeout %d s)", TIMEOUT_POWER_ON / 1000);
+#if MBED_CONF_CELLULAR_TIMEOUT_POWER_ON
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_POWER_ON);
+    tr_debug("Modem power ON (timeout %d s)", MBED_CONF_CELLULAR_TIMEOUT_POWER_ON / 1000);
+#endif
     if (power_on()) {
         enter_to_state(STATE_DEVICE_READY);
     } else {
@@ -354,7 +351,9 @@ bool CellularStateMachine::device_ready()
 
 void CellularStateMachine::state_device_ready()
 {
-    _cellularDevice.set_timeout(TIMEOUT_POWER_ON);
+#if MBED_CONF_CELLULAR_TIMEOUT_POWER_ON
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_POWER_ON);
+#endif
     if (!(_status & DEVICE_READY)) {
         tr_debug("Device was not ready, calling soft_power_on()");
         _cb_data.error = _cellularDevice.soft_power_on();
@@ -378,8 +377,10 @@ void CellularStateMachine::state_device_ready()
 
 void CellularStateMachine::state_sim_pin()
 {
-    _cellularDevice.set_timeout(TIMEOUT_SIM_PIN);
-    tr_info("Setup SIM (timeout %d s)", TIMEOUT_SIM_PIN / 1000);
+#if MBED_CONF_CELLULAR_TIMEOUT_SIM_PIN
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_SIM_PIN);
+    tr_debug("Setup SIM (timeout %d s)", MBED_CONF_CELLULAR_TIMEOUT_SIM_PIN / 1000);
+#endif
     if (open_sim()) {
         bool success = false;
         for (int type = 0; type < CellularNetwork::C_MAX; type++) {
@@ -412,8 +413,9 @@ void CellularStateMachine::state_sim_pin()
 
 void CellularStateMachine::state_registering()
 {
-    _cellularDevice.set_timeout(TIMEOUT_NETWORK);
-    tr_info("Network registration (timeout %d s)", TIMEOUT_REGISTRATION / 1000);
+#if MBED_CONF_CELLULAR_TIMEOUT_NETWORK_ATTACH
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_NETWORK_ATTACH);
+#endif
     if (is_registered()) {
         if (_cb_data.status_data != CellularNetwork::RegisteredHomeNetwork &&
                 _cb_data.status_data != CellularNetwork::RegisteredRoaming && _status) {
@@ -425,7 +427,10 @@ void CellularStateMachine::state_registering()
         // we are already registered, go to attach
         enter_to_state(STATE_ATTACHING_NETWORK);
     } else {
-        _cellularDevice.set_timeout(TIMEOUT_REGISTRATION);
+#if MBED_CONF_CELLULAR_TIMEOUT_NETWORK_SELECTION
+        _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_NETWORK_SELECTION);
+        tr_debug("Network selection (timeout %d s)", MBED_CONF_CELLULAR_TIMEOUT_NETWORK_SELECTION / 1000);
+#endif
         if (!_command_success && !_plmn) { // don't call set_registration twice for manual registration
             _cb_data.error = _network->set_registration(_plmn);
             _command_success = (_cb_data.error == NSAPI_ERROR_OK);
@@ -436,8 +441,10 @@ void CellularStateMachine::state_registering()
 
 void CellularStateMachine::state_attaching()
 {
-    _cellularDevice.set_timeout(TIMEOUT_CONNECT);
-    tr_info("Attaching network (timeout %d s)", TIMEOUT_CONNECT / 1000);
+#if MBED_CONF_CELLULAR_TIMEOUT_NETWORK_CONNECT
+    _cellularDevice.set_timeout(MBED_CONF_CELLULAR_TIMEOUT_NETWORK_CONNECT);
+    tr_debug("Attaching network (timeout %d s)", MBED_CONF_CELLULAR_TIMEOUT_NETWORK_CONNECT / 1000);
+#endif
     if (_status != ATTACHED_TO_NETWORK) {
         _cb_data.error = _network->set_attach();
     }

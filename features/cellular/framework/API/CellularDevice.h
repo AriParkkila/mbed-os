@@ -129,6 +129,7 @@ public:
      *  The driver may repeat this if the modem is not responsive to AT commands.
      *
      *  @remark CellularStateMachine calls this when requested to connect.
+     *  Configure response timeout with `cellular.timeout-power-on` in mbed_lib.json.
      *  If you are not using CellularStateMachine then you need to call this function yourself.
      *
      *  @post You must call init to setup the modem.
@@ -160,6 +161,9 @@ public:
     virtual nsapi_error_t set_pin(const char *sim_pin) = 0;
 
     /** Get SIM card's state
+     *
+     *  @remark CellularStateMachine calls this when requested to connect and SIM pin is set.
+     *  Configure response timeout with `cellular.timeout-sim-pin` in mbed_lib.json.
      *
      *  @param state    current state of SIM
      *  @return         NSAPI_ERROR_OK on success
@@ -326,7 +330,9 @@ public:
      */
     virtual void close_information() = 0;
 
-    /** Set the default response timeout.
+    /** Set the default response timeout from the modem.
+     *
+     *  @remark Timeout is overwritten by CellularStateMachine if defaults are defined, see cellular `mbed_lib.json`.
      *
      *  @param timeout    milliseconds to wait response from modem
      */
