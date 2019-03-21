@@ -3579,7 +3579,8 @@
             "STM32L4",
             "STM32L486RG",
             "STM32L486xG",
-            "WISE_1570"
+            "WISE_1570",
+            "PSA"
         ],
         "config": {
             "clock_source": {
@@ -3593,7 +3594,8 @@
         "macros_add": [
             "MBEDTLS_CONFIG_HW_SUPPORT",
             "WISE_1570",
-            "MBED_SPLIT_HEAP"
+	    "MBED_SPLIT_HEAP",
+            "MBEDTLS_PSA_CRYPTO_C"
         ],
         "device_has_add": [
             "ANALOGOUT",
