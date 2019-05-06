@@ -43,14 +43,15 @@ utest::v1::status_t test_setup(const size_t number_of_cases)
 
 Case cases[] = {
     Case("NETWORKINTERFACE_STATUS", NETWORKINTERFACE_STATUS),
-    Case("NETWORKINTERFACE_STATUS_NONBLOCK", NETWORKINTERFACE_STATUS_NONBLOCK),
+/*    Case("NETWORKINTERFACE_STATUS_NONBLOCK", NETWORKINTERFACE_STATUS_NONBLOCK),
     Case("NETWORKINTERFACE_STATUS_GET", NETWORKINTERFACE_STATUS_GET),
-    Case("NETWORKINTERFACE_CONN_DISC_REPEAT", NETWORKINTERFACE_CONN_DISC_REPEAT),
+    Case("NETWORKINTERFACE_CONN_DISC_REPEAT", NETWORKINTERFACE_CONN_DISC_REPEAT),*/
 };
 
 Specification specification(test_setup, cases);
-
+#include "CellularLog.h"
 int main()
 {
+    mbed_trace_init();
     return !Harness::run(specification);
 }

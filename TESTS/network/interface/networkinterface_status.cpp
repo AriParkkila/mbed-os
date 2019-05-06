@@ -20,7 +20,8 @@
 #include "networkinterface_tests.h"
 #include "unity/unity.h"
 #include "utest.h"
-
+#include "CellularDevice.h"
+#include "ATHandler.h"
 using namespace utest::v1;
 
 namespace {
@@ -28,7 +29,7 @@ NetworkInterface *net;
 rtos::Semaphore status_semaphore;
 int status_write_counter = 0;
 int status_read_counter = 0;
-const int repeats = 5;
+const int repeats = 1;
 const int status_buffer_size = 100;
 nsapi_connection_status_t current_status = NSAPI_STATUS_ERROR_UNSUPPORTED;
 nsapi_connection_status_t statuses[status_buffer_size];
@@ -36,6 +37,15 @@ nsapi_connection_status_t statuses[status_buffer_size];
 
 void status_cb(nsapi_event_t event, intptr_t value)
 {
+    ATHandler* at = CellularDevice::get_default_instance()->get_at_handler();
+    at->lock();
+    at->cmd_start("AT+CGAPNRC");
+    at->cmd_stop();
+    at->resp_start();
+    at->resp_stop();
+    at->unlock();
+    CellularDevice::get_default_instance()->release_at_handler(at);
+
     if (event != NSAPI_EVENT_CONNECTION_STATUS_CHANGE) {
         return;
     }
@@ -78,6 +88,15 @@ void NETWORKINTERFACE_STATUS()
     net->attach(status_cb);
     net->set_blocking(true);
 
+    ATHandler* at = CellularDevice::get_default_instance()->get_at_handler();
+    at->lock();
+    at->cmd_start("AT+CGAPNRC");
+    at->cmd_stop();
+    at->resp_start();
+    at->resp_stop();
+    at->unlock();
+    CellularDevice::get_default_instance()->release_at_handler(at);
+
     for (int i = 0; i < repeats; i++) {
         nsapi_error_t err = net->connect();
         TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, err);
@@ -97,6 +116,15 @@ void NETWORKINTERFACE_STATUS()
         status = wait_status_callback();
         TEST_ASSERT_EQUAL(NSAPI_STATUS_DISCONNECTED, status);
     }
+
+    at = CellularDevice::get_default_instance()->get_at_handler();
+    at->lock();
+    at->cmd_start("AT+CGAPNRC");
+    at->cmd_stop();
+    at->resp_start();
+    at->resp_stop();
+    at->unlock();
+    CellularDevice::get_default_instance()->release_at_handler(at);
 
     net->attach(NULL);
 }

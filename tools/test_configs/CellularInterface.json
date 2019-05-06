@@ -23,22 +23,23 @@
         "trace-level": {
             "help": "Note that excessive trace prints may mess up with Greentea parsing",
             "macro_name": "MBED_TRACE_MAX_LEVEL",
-            "value": "TRACE_LEVEL_ERROR"
+            "value": "TRACE_LEVEL_DEBUG"
         }
     },
     "target_overrides": {
         "*": {
             "target.network-default-interface-type": "CELLULAR",
-            "nsapi.default-cellular-sim-pin": null,
+            "nsapi.default-cellular-sim-pin": "\"1234\"",
             "nsapi.dns-response-wait-time": 30000,
             "ppp-cell-iface.apn-lookup": false,
             "cellular.use-apn-lookup": false,
             "lwip.ipv4-enabled": true,
             "lwip.ipv6-enabled": true,
             "lwip.tcp-enabled": true,
-            "lwip.ppp-enabled": true,
+            "lwip.ppp-enabled": false,
             "lwip.ethernet-enabled": false,
-            "cellular.debug-at": false
+            "cellular.debug-at": true,
+            "mbed-trace.enable": true
         }
     }
 }
