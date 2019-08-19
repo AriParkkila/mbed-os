@@ -447,24 +447,53 @@ nsapi_error_t AT_CellularContext::activate_ip_context()
     nsapi_error_t ret = find_and_activate_context();
 #if !NSAPI_PPP_AVAILABLE
     if (ret == NSAPI_ERROR_OK) {
-        pdpContextList_t params_list;
-        if (get_pdpcontext_params(params_list) == NSAPI_ERROR_OK) {
-            pdpcontext_params_t *pdp = params_list.get_head();
-            while (pdp) {
-                SocketAddress addr;
-                if (addr.set_ip_address(pdp->dns_secondary_addr)) {
-                    tr_info("DNS secondary %s", pdp->dns_secondary_addr);
-                    char ifn[5]; // "ce" + two digit _cid + zero
-                    add_dns_server(addr, get_interface_name(ifn));
-                }
-                if (addr.set_ip_address(pdp->dns_primary_addr)) {
-                    tr_info("DNS primary %s", pdp->dns_primary_addr);
-                    char ifn[5]; // "ce" + two digit _cid + zero
-                    add_dns_server(addr, get_interface_name(ifn));
-                }
-                pdp = pdp->next;
+        // get_pdpcontext_params() avoided to use less memory
+        _at.lock();
+        _at.cmd_start("AT+CGCONTRDP=");
+        _at.write_int(_cid);
+        _at.cmd_stop();
+        _at.resp_start("+CGCONTRDP:");
+        while (_at.info_resp()) { // response can be zero or many +CGDCONT lines
+            const int ipv6_subnet_size = 128;
+            const int max_ipv6_size = 64;
+            char dns_addr[MAX_IPV6_ADDR_IN_IPV4LIKE_DOTTED_FORMAT + 1];
+            SocketAddress dns_primary;
+            SocketAddress dns_secondary;
+
+            char *ipv6_and_subnetmask = new char[ipv6_subnet_size];
+            char *temp = new char[max_ipv6_size];
+
+            _at.skip_param(5);
+            _at.read_string(ipv6_and_subnetmask, ipv6_subnet_size);
+            if (_at.get_last_error() == NSAPI_ERROR_OK) {
+                separate_ip_addresses(ipv6_and_subnetmask, dns_addr, sizeof(dns_addr), temp, max_ipv6_size);
+                prefer_ipv6(dns_addr, sizeof(dns_addr), temp, max_ipv6_size);
+                dns_primary.set_ip_address(dns_addr);
             }
+            _at.read_string(ipv6_and_subnetmask, ipv6_subnet_size);
+            if (_at.get_last_error() == NSAPI_ERROR_OK) {
+                separate_ip_addresses(ipv6_and_subnetmask, dns_addr, sizeof(dns_addr), temp, max_ipv6_size);
+                prefer_ipv6(dns_addr, sizeof(dns_addr), temp, max_ipv6_size);
+                dns_secondary.set_ip_address(dns_addr);
+            }
+
+            // in reverse order to put primary on top
+            if (dns_secondary.get_ip_version() != NSAPI_UNSPEC) {
+                tr_info("DNS secondary %s", dns_secondary.get_ip_address());
+                char ifn[5]; // "ce" + two digit _cid + zero
+                add_dns_server(dns_secondary, get_interface_name(ifn));
+            }
+            if (dns_primary.get_ip_version() != NSAPI_UNSPEC) {
+                tr_info("DNS primary %s", dns_primary.get_ip_address());
+                char ifn[5]; // "ce" + two digit _cid + zero
+                add_dns_server(dns_primary, get_interface_name(ifn));
+            }
+
+            delete [] temp;
+            delete [] ipv6_and_subnetmask;
         }
+        _at.resp_stop();
+        _at.unlock();
     }
 #endif
     return ret;
