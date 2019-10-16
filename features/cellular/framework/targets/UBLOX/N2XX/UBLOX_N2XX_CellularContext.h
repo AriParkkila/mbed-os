@@ -33,7 +33,7 @@ protected:
 #if !NSAPI_PPP_AVAILABLE
     virtual NetworkStack *get_stack();
 #endif
-
+    virtual const char* get_nonip_context_type_str();
 };
 
 } /* namespace mbed */

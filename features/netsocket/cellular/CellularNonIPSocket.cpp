@@ -164,7 +164,13 @@ nsapi_size_or_error_t CellularNonIPSocket::recv(void *buffer, nsapi_size_t size)
 
             if (flag & osFlagsError) {
                 // Timeout break
-                ret = NSAPI_ERROR_WOULD_BLOCK;
+                // poll once due to +CRTDCP indication may be missing, that's seen e.g. on bc95/n211
+                nsapi_size_or_error_t recv = _cp_netif->recv(buffer, size);
+                if (recv >= 0) {
+                    ret = recv;
+                } else {
+                    ret = NSAPI_ERROR_WOULD_BLOCK;
+                }
                 break;
             }
         }

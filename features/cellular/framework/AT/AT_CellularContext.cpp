@@ -18,6 +18,7 @@
 #include "AT_CellularContext.h"
 #include "AT_CellularNetwork.h"
 #include "AT_CellularStack.h"
+#include "AT_ControlPlane_netif.h"
 #include "AT_CellularDevice.h"
 #include "CellularLog.h"
 #if (DEVICE_SERIAL && DEVICE_INTERRUPTIN) || defined(DOXYGEN_ONLY)
@@ -426,13 +427,17 @@ bool AT_CellularContext::get_context()
     return true;
 }
 
+const char* AT_CellularContext::get_nonip_context_type_str() {
+    return "Non-IP";
+}
+
 bool AT_CellularContext::set_new_context(int cid)
 {
     char pdp_type_str[8 + 1] = {0};
     pdp_type_t pdp_type = IPV4_PDP_TYPE;
 
     if (_nonip_req && _cp_in_use && get_property(PROPERTY_NON_IP_PDP_TYPE)) {
-        strncpy(pdp_type_str, "Non-IP", sizeof(pdp_type_str));
+        strncpy(pdp_type_str, get_nonip_context_type_str(), sizeof(pdp_type_str));
         pdp_type = NON_IP_PDP_TYPE;
     } else if (get_property(PROPERTY_IPV4V6_PDP_TYPE) || (get_property(PROPERTY_IPV4_PDP_TYPE) && get_property(PROPERTY_IPV6_PDP_TYPE))) {
         strncpy(pdp_type_str, "IPV4V6", sizeof(pdp_type_str));
@@ -542,7 +547,7 @@ nsapi_error_t AT_CellularContext::find_and_activate_context()
     }
 
     // do check for stack to validate that we have support for stack
-    if (!get_stack()) {
+    if (!(_nonip_req && _cp_in_use) && !get_stack()) {
         _at.unlock();
         tr_error("No cellular stack!");
         return NSAPI_ERROR_UNSUPPORTED;
@@ -949,7 +954,11 @@ void AT_CellularContext::cellular_callback(nsapi_event_t ev, intptr_t ptr)
         }
 
         if (_cp_req && !_cp_in_use && (_cb_data.error == NSAPI_ERROR_OK) &&
-                (st == CellularSIMStatusChanged && data->status_data == CellularDevice::SimStateReady)) {
+                (st == CellularRegistrationStatusChanged &&
+                        (data->status_data == CellularNetwork::RegisteredHomeNetwork ||
+                         data->status_data == CellularNetwork::RegisteredRoaming ||
+                         data->status_data == CellularNetwork::AlreadyRegistered) &&
+                         _current_op == OP_REGISTER)) {
             if (setup_control_plane_opt() != NSAPI_ERROR_OK) {
                 tr_error("Control plane SETUP failed!");
             } else {
@@ -1030,8 +1039,10 @@ void AT_CellularContext::cellular_callback(nsapi_event_t ev, intptr_t ptr)
 
 ControlPlane_netif *AT_CellularContext::get_cp_netif()
 {
-    tr_error("No control plane interface available from base context!");
-    return NULL;
+    if (!_cp_netif) {
+        _cp_netif = new AT_ControlPlane_netif(_at, _cid);
+    }
+    return _cp_netif;
 }
 
 nsapi_error_t AT_CellularContext::setup_control_plane_opt()
@@ -1054,19 +1065,11 @@ nsapi_error_t AT_CellularContext::setup_control_plane_opt()
     ciot_opt_ret = _nw->set_ciot_optimization_config(mbed::CellularNetwork::CIOT_OPT_CONTROL_PLANE,
                                                      mbed::CellularNetwork::PREFERRED_UE_OPT_CONTROL_PLANE,
                                                      callback(this, &AT_CellularContext::ciot_opt_cb));
-
-    if (ciot_opt_ret != NSAPI_ERROR_OK) {
-        return ciot_opt_ret;
+    if (ciot_opt_ret == NSAPI_ERROR_OK) {
+        // assume network supports CIoT optimizations until ciot_opt_cb
+        _cp_in_use = true;
     }
-
-    //wait for control plane opt call back to release semaphore
-    _cp_opt_semaphore.try_acquire_for(CP_OPT_NW_REPLY_TIMEOUT);
-
-    if (_cp_in_use) {
-        return NSAPI_ERROR_OK;
-    }
-
-    return NSAPI_ERROR_DEVICE_ERROR;
+    return ciot_opt_ret;
 }
 
 void AT_CellularContext::ciot_opt_cb(mbed::CellularNetwork::CIoT_Supported_Opt  ciot_opt)
@@ -1074,8 +1077,9 @@ void AT_CellularContext::ciot_opt_cb(mbed::CellularNetwork::CIoT_Supported_Opt  
     if (ciot_opt == mbed::CellularNetwork::CIOT_OPT_CONTROL_PLANE ||
             ciot_opt == mbed::CellularNetwork::CIOT_OPT_BOTH) {
         _cp_in_use = true;
+    } else {
+        _cp_in_use = false;
     }
-    _cp_opt_semaphore.release();
 }
 
 void AT_CellularContext::set_disconnect()

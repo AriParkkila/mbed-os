@@ -1,4 +1,25 @@
+/*
+ * Copyright (c) 2018, Arm Limited and affiliates.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "CellularUtil.h"
 #include "QUECTEL_BG96_ControlPlane_netif.h"
+#include "CellularLog.h"
+
+using namespace mbed_cellular_util;
 
 namespace mbed {
 
@@ -7,6 +28,9 @@ QUECTEL_BG96_ControlPlane_netif::QUECTEL_BG96_ControlPlane_netif(ATHandler &at, 
 
 nsapi_size_or_error_t QUECTEL_BG96_ControlPlane_netif::send(const void *data, nsapi_size_t size)
 {
+    if (size > 100) { // see BG96_NIDD_AT_Commands_Manual_V1.0
+        return NSAPI_ERROR_PARAMETER;
+    }
     nsapi_size_or_error_t err = _at.at_cmd_discard("+QCFGEXT", "=\"nipds\",0,", "%s%d", data, size);
 
     if (err == NSAPI_ERROR_OK) {
@@ -20,7 +44,7 @@ nsapi_size_or_error_t QUECTEL_BG96_ControlPlane_netif::recv(void *buffer, nsapi_
 {
     _at.lock();
 
-    _at.cmd_start_stop("QCFGEXT", "=", "%s%d", "nipdr", 0);
+    _at.cmd_start_stop("+QCFGEXT", "=", "%s%d", "nipdr", 0);
     _at.resp_start("+QCFGEXT: ");
     // skip 3 params: "nipdr",<total_receive_length>,<have_read_length>
     _at.skip_param(3);
@@ -32,14 +56,18 @@ nsapi_size_or_error_t QUECTEL_BG96_ControlPlane_netif::recv(void *buffer, nsapi_
         _at.unlock();
         return NSAPI_ERROR_WOULD_BLOCK;
     }
+    if ((nsapi_size_t)unread_length > size) {
+        tr_warn("recv %d/%d", size, unread_length);
+        unread_length = size;
+    }
 
-    _at.cmd_start_stop("QCFGEXT", "=", "%s%d", "nipdr", unread_length);
+    _at.cmd_start_stop("+QCFGEXT", "=", "%s%d", "nipdr", unread_length);
 
     _at.resp_start("+QCFGEXT:");
     // skip "nipdr"
     _at.skip_param();
-    int read_length = _at.read_int();
-    _at.read_string((char *)buffer, read_length);
+    nsapi_size_t read_length = _at.read_int();
+    _at.read_bytes((uint8_t *)buffer, read_length);
     _at.resp_stop();
     nsapi_error_t err = _at.get_last_error();
     _at.unlock();

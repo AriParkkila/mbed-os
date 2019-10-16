@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Arm Limited and affiliates.
+ * Copyright (c) 2019, Arm Limited and affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,31 +15,15 @@
  * limitations under the License.
  */
 
-#include "QUECTEL_BC95_CellularNetwork.h"
+#include "UBLOX_N2XX_CellularNetwork.h"
 
 using namespace mbed;
 
-QUECTEL_BC95_CellularNetwork::QUECTEL_BC95_CellularNetwork(ATHandler &atHandler) : AT_CellularNetwork(atHandler)
-{
-    _op_act = RAT_NB1;
-}
-
-QUECTEL_BC95_CellularNetwork::~QUECTEL_BC95_CellularNetwork()
+UBLOX_N2XX_CellularNetwork::UBLOX_N2XX_CellularNetwork(ATHandler &atHandler) : AT_CellularNetwork(atHandler)
 {
 }
 
-nsapi_error_t QUECTEL_BC95_CellularNetwork::set_access_technology_impl(RadioAccessTechnology opRat)
-{
-    if (opRat != RAT_NB1) {
-        // only rat that is supported by this modem
-        _op_act = RAT_NB1;
-        return NSAPI_ERROR_UNSUPPORTED;
-    }
-
-    return NSAPI_ERROR_OK;
-}
-
-nsapi_error_t QUECTEL_BC95_CellularNetwork::clear()
+nsapi_error_t UBLOX_N2XX_CellularNetwork::clear()
 {
     nsapi_error_t err = AT_CellularNetwork::clear();
 #if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
@@ -56,5 +40,14 @@ nsapi_error_t QUECTEL_BC95_CellularNetwork::clear()
         }
     }
 #endif
+    return err;
+}
+
+nsapi_error_t UBLOX_N2XX_CellularNetwork::set_ciot_optimization_config(CIoT_Supported_Opt supported_opt,
+                                                               CIoT_Preferred_UE_Opt preferred_opt,
+                                                               Callback<void(CIoT_Supported_Opt)> network_support_cb)
+{
+    _ciotopt_network_support_cb = network_support_cb;
+    nsapi_error_t err = _at.at_cmd_discard("+CRTDCP", "=", "%d", 1);
     return err;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Arm Limited and affiliates.
+ * Copyright (c) 2019, Arm Limited and affiliates.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,22 @@
  * limitations under the License.
  */
 
-#ifndef QUECTEL_BC95_CELLULAR_NETWORK_H_
-#define QUECTEL_BC95_CELLULAR_NETWORK_H_
+#ifndef UBLOX_N2XX_CELLULAR_NETWORK_H_
+#define UBLOX_N2XX_CELLULAR_NETWORK_H_
 
 #include "AT_CellularNetwork.h"
 
 namespace mbed {
 
-class QUECTEL_BC95_CellularNetwork : public AT_CellularNetwork {
+class UBLOX_N2XX_CellularNetwork : public AT_CellularNetwork {
 public:
-    QUECTEL_BC95_CellularNetwork(ATHandler &atHandler);
-    virtual ~QUECTEL_BC95_CellularNetwork();
-
-protected:
-    virtual nsapi_error_t set_access_technology_impl(RadioAccessTechnology opRat);
+    UBLOX_N2XX_CellularNetwork(ATHandler &atHandler);
     virtual nsapi_error_t clear();
+    virtual nsapi_error_t set_ciot_optimization_config(CIoT_Supported_Opt supported_opt,
+                                                       CIoT_Preferred_UE_Opt preferred_opt,
+                                                       Callback<void(CIoT_Supported_Opt)> network_support_cb);
 };
+
 } // namespace mbed
-#endif // QUECTEL_BC95_CELLULAR_NETWORK_H_
+
+#endif // UBLOX_N2XX_CELLULAR_NETWORK_H_
