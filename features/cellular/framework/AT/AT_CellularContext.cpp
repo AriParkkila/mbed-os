@@ -952,20 +952,21 @@ void AT_CellularContext::cellular_callback(nsapi_event_t ev, intptr_t ptr)
         if (!_nw && st == CellularDeviceReady && _cb_data.error == NSAPI_ERROR_OK) {
             _nw = _device->open_network(_fh);
         }
-
+#if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
         if (_cp_req && !_cp_in_use && (_cb_data.error == NSAPI_ERROR_OK) &&
-                (st == CellularRegistrationStatusChanged &&
+                (st == CellularSIMStatusChanged && data->status_data == CellularDevice::SimStateReady)) {
+                /*(st == CellularRegistrationStatusChanged &&
                         (data->status_data == CellularNetwork::RegisteredHomeNetwork ||
                          data->status_data == CellularNetwork::RegisteredRoaming ||
                          data->status_data == CellularNetwork::AlreadyRegistered) &&
-                         _current_op == OP_REGISTER)) {
+                         _current_op == OP_REGISTER)) {*/
             if (setup_control_plane_opt() != NSAPI_ERROR_OK) {
                 tr_error("Control plane SETUP failed!");
             } else {
                 tr_info("Control plane SETUP success!");
             }
         }
-
+#endif
         if (_is_blocking) {
             if (_cb_data.error != NSAPI_ERROR_OK) {
                 // operation failed, release semaphore
@@ -1085,8 +1086,10 @@ void AT_CellularContext::ciot_opt_cb(mbed::CellularNetwork::CIoT_Supported_Opt  
 void AT_CellularContext::set_disconnect()
 {
     tr_debug("AT_CellularContext::set_disconnect()");
-    _is_connected = false;
-    _device->cellular_callback(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_DISCONNECTED, this);
+    if (_is_connected) {
+        _is_connected = false;
+        _device->cellular_callback(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_DISCONNECTED, this);
+    }
 }
 
 void AT_CellularContext::set_cid(int cid)

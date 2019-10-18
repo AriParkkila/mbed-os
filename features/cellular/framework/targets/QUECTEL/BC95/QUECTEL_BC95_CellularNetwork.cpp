@@ -44,13 +44,15 @@ nsapi_error_t QUECTEL_BC95_CellularNetwork::clear()
     nsapi_error_t err = AT_CellularNetwork::clear();
 #if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
     if (!err) {
+#ifdef MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN
         err = _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, "NONIP", MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
+#endif
         if (!err) {
             err = _at.at_cmd_discard("+CIPCA", "=", "%d%d", 3, 1); // EPS Attach without PDN connection
         }
         if (!err) {
             _at.lock();
-            _at.cmd_start("AT+NCONFIG=\"AUTOCONNECT\",\"FALSE\""); // disable auto connect to IP context
+            _at.cmd_start("AT+NCONFIG=\"AUTOCONNECT\",\"TRUE\""); // disable auto connect to IP context
             _at.cmd_stop_read_resp();
             err = _at.unlock_return_error();
         }
