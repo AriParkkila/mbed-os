@@ -30,14 +30,12 @@ void NIDDSOCKET_SEND_TIMEOUT()
 
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
 
     Timer timer;
     timer.start();
     int sent = sock.send(tx_buffer, sizeof(tx_buffer));
     timer.stop();
     TEST_ASSERT_EQUAL(sizeof(tx_buffer), sent);
-    printf("MBED: Time taken: %fs\n", timer.read());
     sock.set_timeout(1000);
 
     timer.reset();
@@ -45,7 +43,6 @@ void NIDDSOCKET_SEND_TIMEOUT()
     sent = sock.send(tx_buffer, sizeof(tx_buffer));
     timer.stop();
     TEST_ASSERT_EQUAL(sizeof(tx_buffer), sent);
-    printf("MBED: Time taken: %fs\n", timer.read());
 
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
 }

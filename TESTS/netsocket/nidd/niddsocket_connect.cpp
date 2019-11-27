@@ -27,6 +27,7 @@ void NIDDSOCKET_CONNECT()
 {
     CellularContext *net = CellularContext::get_default_nonip_instance();
     net->set_default_parameters();
+
     nsapi_error_t err = net->connect();
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, err);
 }

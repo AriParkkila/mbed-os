@@ -86,10 +86,11 @@ nsapi_size_or_error_t AT_ControlPlane_netif::recv(void *cpdata, nsapi_size_t cpd
 {
     _at.lock();
     if (_packet_list.count() <= 0) {
-        (void) send("", 0); // poll for missing +CRTDCP indications
+       /*(void) send("", 0); // poll for missing +CRTDCP indications
         if (_packet_list.count() <= 0) {
             return NSAPI_ERROR_WOULD_BLOCK;
-        }
+        }*/
+        return NSAPI_ERROR_WOULD_BLOCK;
     }
     packet_t *packet = _packet_list.dequeue();
     int data_len = (cpdata_length >= packet->data_len) ? packet->data_len : cpdata_length;

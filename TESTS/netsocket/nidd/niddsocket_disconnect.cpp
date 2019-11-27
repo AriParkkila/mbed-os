@@ -25,8 +25,6 @@ using namespace utest::v1;
 
 void NIDDSOCKET_DISCONNECT()
 {
-    tr_error("NIDDSOCKET_DISCONNECT\n");
     nsapi_error_t err = CellularContext::get_default_nonip_instance()->disconnect();
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, err);
-    tr_error("NIDDSOCKET_DISCONNECT %d\n", err);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, ARM Limited, All Rights Reserved
+ * Copyright (c) 2018, ARM Limited, All Rights Reserved
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -17,9 +17,9 @@
 
 #include "mbed.h"
 #include "greentea-client/test_env.h"
-#include "nidd_tests.h"
 #include "unity/unity.h"
 #include "utest.h"
+#include "nidd_tests.h"
 
 using namespace utest::v1;
 
@@ -36,36 +36,39 @@ static void _sigio_handler(osThreadId id)
 
 void NIDDSOCKET_RECV_TIMEOUT()
 {
-    static const int DATA_LEN = 100;
-    char buff[DATA_LEN] = {0};
-
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
     sock.set_timeout(100);
     sock.sigio(callback(_sigio_handler, ThisThread::get_id()));
+
+    static const int DATA_LEN = 100;
+    char buff[DATA_LEN] = {0};
     int recvd;
     Timer timer;
     int pkt_success = 0;
     for (int i = 0; i < PKT_NUM; i++) {
+        memset(buff, 'A', sizeof(buff));
         TEST_ASSERT_EQUAL(DATA_LEN, sock.send(buff, DATA_LEN));
         timer.reset();
         timer.start();
         recvd = sock.recv(buff, sizeof(buff));
         timer.stop();
+
         if (recvd == NSAPI_ERROR_WOULD_BLOCK) {
-            if (timer.read_ms() < 50 || timer.read_ms() > 150) {
-                printf("MBED: recv() took: %dms\n", timer.read_ms());
-                break;
+            osSignalWait(SIGNAL_SIGIO, SIGIO_TIMEOUT);
+            if (timer.read_ms() > 150) {
+                TEST_ASSERT(150 - timer.read_ms() < 51);
+            } else {
+                TEST_ASSERT(timer.read_ms() - 150 < 51);
             }
-            poll_pending_messages(sock);
+            continue;
+        } else if (recvd < 0) {
+            printf("[bt#%02d] network error %d\n", i, recvd);
             continue;
         }
         TEST_ASSERT_EQUAL(DATA_LEN, recvd);
         pkt_success++;
     }
 
-    printf("MBED: %d out of %d packets were received.\n", pkt_success, PKT_NUM);
-    poll_pending_messages(sock);
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
 }

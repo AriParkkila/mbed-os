@@ -23,7 +23,7 @@
         "trace-level": {
             "help": "Note that excessive trace prints may mess up with Greentea parsing",
             "macro_name": "MBED_TRACE_MAX_LEVEL",
-            "value": "TRACE_LEVEL_DEBUG"
+            "value": "TRACE_LEVEL_ERROR"
         }
     },
     "target_overrides": {

@@ -27,13 +27,9 @@ void NIDDSOCKET_SEND_INVALID()
 {
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
 
     TEST_ASSERT_EQUAL(sock.send(NULL, 0), NSAPI_ERROR_PARAMETER);
     TEST_ASSERT_EQUAL(sock.send(NULL, MAX_CP_DATA_RECV_LEN + 1), NSAPI_ERROR_PARAMETER);
-
-    TEST_ASSERT_EQUAL(5, sock.send("hello", 5));
-    poll_pending_messages(sock);
 
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
 }
