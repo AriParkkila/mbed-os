@@ -44,6 +44,7 @@ nsapi_error_t QUECTEL_BC95_CellularNetwork::clear()
     nsapi_error_t err = AT_CellularNetwork::clear();
 #if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
     if (!err) {
+        err = _at.at_cmd_discard("+CGDCONT", "=", "%d", 0);
 #ifdef MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN
         err = _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, "NONIP", MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
 #endif

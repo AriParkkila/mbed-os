@@ -28,20 +28,15 @@
     },
     "target_overrides": {
         "*": {
-            "QUECTEL_BG96.tx": "p42",
-            "QUECTEL_BG96.rx": "p40",
-            "QUECTEL_BG96.cts": "p35",
-            "QUECTEL_BG96.rts": "p36",
-            "QUECTEL_BG96.pwr": "P1_6",
-            "QUECTEL_BG96.rst": "P1_5",
             "target.network-default-interface-type": "CELLULAR",
             "cellular.control-plane-opt": true,
+            "cellular.clear-on-connect": true,
             "cellular.radio-access-technology": 9,
-            "QUECTEL_BG96.provide-default": true,
+            "QUECTEL_BG96.provide-default": false,
             "UBLOX_N2XX.provide-default": false,
             "QUECTEL_BC95.provide-default": false,
             "nsapi.default-cellular-plmn": null,
-            "nsapi.default-cellular-sim-pin": "\"1234\"",
+            "nsapi.default-cellular-sim-pin": null,
             "nsapi.default-cellular-apn": "\"nonip\"",
             "nsapi.default-cellular-username": null,
             "nsapi.default-cellular-password": null,
@@ -55,3 +50,4 @@
         }
     }
 }
+

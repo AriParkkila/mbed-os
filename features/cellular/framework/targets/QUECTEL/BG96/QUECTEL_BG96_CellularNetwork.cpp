@@ -77,3 +77,13 @@ void QUECTEL_BG96_CellularNetwork::get_context_state_command()
     _at.resp_start("+QIACT:");
 }
 
+nsapi_error_t QUECTEL_BG96_CellularNetwork::clear()
+{
+    nsapi_error_t err = AT_CellularNetwork::clear();
+#if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
+    if (!err) {
+        err = _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, "Non-IP", MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
+    }
+#endif
+    return err;
+}

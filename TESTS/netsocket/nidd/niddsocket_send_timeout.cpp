@@ -44,5 +44,6 @@ void NIDDSOCKET_SEND_TIMEOUT()
     timer.stop();
     TEST_ASSERT_EQUAL(sizeof(tx_buffer), sent);
 
+    poll_pending_messages(sock);
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
 }

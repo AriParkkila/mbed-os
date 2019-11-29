@@ -44,7 +44,6 @@ void AT_ControlPlane_netif::urc_cp_recv()
     }
     uint8_t *cpdata = new uint8_t[cpdata_length];
     ssize_t read_len = _at.read_hex_string((char *)cpdata, cpdata_length);
-    _at.unlock();
 
     // cid not expected to be different because: one context - one file handle
     // so this file handle cannot get urc from different context
@@ -56,6 +55,7 @@ void AT_ControlPlane_netif::urc_cp_recv()
     } else {
         delete[] cpdata;
     }
+    _at.unlock();
 }
 
 nsapi_size_or_error_t AT_ControlPlane_netif::send(const void *cpdata, nsapi_size_t cpdata_length)
@@ -64,20 +64,13 @@ nsapi_size_or_error_t AT_ControlPlane_netif::send(const void *cpdata, nsapi_size
         return NSAPI_ERROR_PARAMETER;
     }
 
-    char *hexstr = new char[cpdata_length * 2 + 1];
-    int hexlen = char_str_to_hex_str((const char *)cpdata, cpdata_length, hexstr);
-    // NULL terminated for write_string
-    hexstr[hexlen] = 0;
     _at.lock();
     _at.cmd_start("AT+CSODCP=");
     _at.write_int(_cid);
     _at.write_int(cpdata_length);
-    _at.write_string(hexstr);
-    _at.cmd_stop();
-    _at.resp_start();
-    _at.resp_stop();
+    _at.write_hex_string((char *)cpdata, cpdata_length);
+    _at.cmd_stop_read_resp();
     nsapi_size_or_error_t err = _at.unlock_return_error();
-    delete [] hexstr;
 
     return err ? err : cpdata_length;
 }
@@ -86,15 +79,16 @@ nsapi_size_or_error_t AT_ControlPlane_netif::recv(void *cpdata, nsapi_size_t cpd
 {
     _at.lock();
     if (_packet_list.count() <= 0) {
-       /*(void) send("", 0); // poll for missing +CRTDCP indications
+       (void) send("", 0); // poll for missing +CRTDCP indications
         if (_packet_list.count() <= 0) {
             return NSAPI_ERROR_WOULD_BLOCK;
-        }*/
+        }
         return NSAPI_ERROR_WOULD_BLOCK;
     }
     packet_t *packet = _packet_list.dequeue();
     int data_len = (cpdata_length >= packet->data_len) ? packet->data_len : cpdata_length;
     memcpy(cpdata, packet->data, data_len);
+    delete[] packet->data;
     delete (packet);
     _at.unlock();
     return data_len;

@@ -29,17 +29,13 @@ nsapi_error_t UBLOX_N2XX_CellularNetwork::clear()
 #if MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
     if (!err) {
 #ifdef MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN
-        err = _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, "NONIP", MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
+        (void) _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, "NONIP", MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
 #endif
-        if (!err) {
-            err = _at.at_cmd_discard("+CIPCA", "=", "%d%d", 3, 1); // EPS Attach without PDN connection
-        }
-        if (!err) {
-            _at.lock();
-            _at.cmd_start("AT+NCONFIG=\"AUTOCONNECT\",\"FALSE\""); // disable auto connect to IP context
-            _at.cmd_stop_read_resp();
-            err = _at.unlock_return_error();
-        }
+        (void) _at.at_cmd_discard("+CIPCA", "=", "%d%d", 3, 1); // EPS Attach without PDN connection
+        _at.lock();
+        _at.cmd_start("AT+NCONFIG=\"AUTOCONNECT\",\"FALSE\""); // disable auto connect to IP context
+        _at.cmd_stop_read_resp();
+        _at.unlock();
     }
 #endif
     return err;

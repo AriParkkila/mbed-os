@@ -31,7 +31,7 @@
 #include "utest.h"
 #include "utest/utest_stack_trace.h"
 #include "networkinterface_tests.h"
-
+#include "CellularLog.h"
 using namespace utest::v1;
 
 // Test setup
@@ -56,6 +56,7 @@ Specification specification(test_setup, cases);
 
 int main()
 {
+    mbed_trace_init();
     return !Harness::run(specification);
 }
 

@@ -28,11 +28,11 @@ QUECTEL_BG96_ControlPlane_netif::QUECTEL_BG96_ControlPlane_netif(ATHandler &at, 
 
 nsapi_size_or_error_t QUECTEL_BG96_ControlPlane_netif::send(const void *data, nsapi_size_t size)
 {
-    if (size > 100) { // see BG96_NIDD_AT_Commands_Manual_V1.0
+    if (size > 100) { // from BG96_NIDD_AT_Commands_Manual_V1.0
         return NSAPI_ERROR_PARAMETER;
     }
-    nsapi_size_or_error_t err = _at.at_cmd_discard("+QCFGEXT", "=\"nipds\",0,", "%s%d", data, size);
 
+    nsapi_size_or_error_t err = _at.at_cmd_discard("+QCFGEXT", "=\"nipds\",0,", "%s%d", data, size);
     if (err == NSAPI_ERROR_OK) {
         return size;
     }
@@ -61,13 +61,14 @@ nsapi_size_or_error_t QUECTEL_BG96_ControlPlane_netif::recv(void *buffer, nsapi_
         unread_length = size;
     }
 
-    _at.cmd_start_stop("+QCFGEXT", "=", "%s%d", "nipdr", unread_length);
+    _at.cmd_start_stop("+QCFGEXT", "=", "%s%d%d", "nipdr", unread_length, 1);
 
     _at.resp_start("+QCFGEXT:");
     // skip "nipdr"
     _at.skip_param();
     nsapi_size_t read_length = _at.read_int();
-    _at.read_bytes((uint8_t *)buffer, read_length);
+    ssize_t read_len = _at.read_hex_string((char *)buffer, read_length);
+
     _at.resp_stop();
     nsapi_error_t err = _at.get_last_error();
     _at.unlock();

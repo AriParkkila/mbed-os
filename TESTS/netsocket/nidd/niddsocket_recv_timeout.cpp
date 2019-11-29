@@ -41,7 +41,7 @@ void NIDDSOCKET_RECV_TIMEOUT()
     sock.set_timeout(100);
     sock.sigio(callback(_sigio_handler, ThisThread::get_id()));
 
-    static const int DATA_LEN = 100;
+    static const int DATA_LEN = 4;
     char buff[DATA_LEN] = {0};
     int recvd;
     Timer timer;
@@ -63,7 +63,7 @@ void NIDDSOCKET_RECV_TIMEOUT()
             }
             continue;
         } else if (recvd < 0) {
-            printf("[bt#%02d] network error %d\n", i, recvd);
+            tr_info("[bt#%02d] network error %d\n", i, recvd);
             continue;
         }
         TEST_ASSERT_EQUAL(DATA_LEN, recvd);

@@ -37,8 +37,9 @@ namespace nidd_global {
 #ifdef MBED_GREENTEA_TEST_NIDDSOCKET_TIMEOUT_S
 static const int TESTS_TIMEOUT = MBED_GREENTEA_TEST_NIDDSOCKET_TIMEOUT_S;
 #else
-static const int TESTS_TIMEOUT = 2 * 60;
+static const int TESTS_TIMEOUT = 5 * 60;
 #endif
+static const int SOCKET_SEND_COUNT = 4;
 }
 
 /*

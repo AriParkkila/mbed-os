@@ -27,14 +27,13 @@ void NIDDSOCKET_SEND_REPEAT()
 {
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
 
     int sent;
     Timer timer;
     int i;
     static const char tx_buffer[] = {'h', 'e', 'l', 'l', 'o'};
     bool oom_earlier = false; // 2 times in a row -> time to give up
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < nidd_global::SOCKET_SEND_COUNT; i++) {
         sent = sock.send(tx_buffer, sizeof(tx_buffer));
         if (sent == NSAPI_ERROR_NO_MEMORY) {
             if (oom_earlier) {
@@ -47,5 +46,6 @@ void NIDDSOCKET_SEND_REPEAT()
         oom_earlier = false;
         TEST_ASSERT_EQUAL(sizeof(tx_buffer), sent);
     }
+    poll_pending_messages(sock);
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
 }

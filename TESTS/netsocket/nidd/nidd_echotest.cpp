@@ -29,6 +29,7 @@ static const int SIGNAL_SIGIO_RX = 0x1;
 static const int SIGNAL_SIGIO_TX = 0x2;
 static const int SIGIO_TIMEOUT = 1000; //[ms]
 static const int RETRIES = 2;
+static const int SOCKET_TIMEOUT = (10 * 1000); //[ms]
 
 static const double EXPECTED_LOSS_RATIO = 0.0;
 static const double TOLERATED_LOSS_RATIO = 0.3;
@@ -36,15 +37,12 @@ static const double TOLERATED_LOSS_RATIO = 0.3;
 CellularNonIPSocket *sock;
 EventFlags signals;
 
-static const int NIDD_BUFF_SIZE = 1350;
+static const int NIDD_BUFF_SIZE = 1358;
 char rx_buffer[NIDD_BUFF_SIZE] = {0};
 char tx_buffer[NIDD_BUFF_SIZE] = {0};
 
-static const int PKTS = 22;
-static const int pkt_sizes[PKTS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, \
-                                    100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, \
-                                    1100, NIDD_BUFF_SIZE
-                                   };
+static const int PKTS = 11;
+static const int pkt_sizes[PKTS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 100};
 Timer tc_exec_time;
 int time_allotted;
 }
@@ -58,7 +56,7 @@ void NIDDSOCKET_ECHOTEST()
 {
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
+    sock.set_timeout(SOCKET_TIMEOUT);
 
     int recvd;
     int sent;
@@ -78,14 +76,14 @@ void NIDDSOCKET_ECHOTEST()
             } else if (sent == pkt_s) {
                 packets_sent++;
             } else {
-                printf("[Round#%02d - Sender] error, returned %d\n", s_idx, sent);
+                tr_info("[Round#%02d - Sender] error, returned %d\n", s_idx, sent);
                 continue;
             }
             recvd = sock.recv(rx_buffer, pkt_s);
             if (recvd == pkt_s) {
                 break;
             } else {
-                printf("[Round#%02d - Receiver] error, returned %d\n", s_idx, recvd);
+                tr_info("[Round#%02d - Receiver] error, returned %d\n", s_idx, recvd);
             }
         }
         if (memcmp(tx_buffer, rx_buffer, pkt_s) == 0) {
@@ -98,7 +96,7 @@ void NIDDSOCKET_ECHOTEST()
     // Packet loss up to 30% tolerated
     if (packets_sent > 0) {
         double loss_ratio = 1 - ((double)packets_recv / (double)packets_sent);
-        printf("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n", packets_sent, packets_recv, loss_ratio);
+        tr_info("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n", packets_sent, packets_recv, loss_ratio);
         TEST_ASSERT_DOUBLE_WITHIN(TOLERATED_LOSS_RATIO, EXPECTED_LOSS_RATIO, loss_ratio);
     }
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.close());
@@ -125,7 +123,7 @@ void NIDDSOCKET_ECHOTEST_NONBLOCK()
         int packets_sent_prev = packets_sent;
         for (int retry_cnt = 0; retry_cnt <= RETRIES; retry_cnt++) {
             fill_tx_buffer_ascii(tx_buffer, pkt_s);
-
+            tx_buffer[pkt_s] = '\0';
             sent = sock->send(tx_buffer, pkt_s);
             if (sent == pkt_s) {
                 packets_sent++;
@@ -136,13 +134,14 @@ void NIDDSOCKET_ECHOTEST_NONBLOCK()
                 }
                 --retry_cnt;
             } else {
-                printf("[Round#%02d - Sender] error, returned %d\n", s_idx, sent);
+                tr_info("[Round#%02d - Sender] error, returned %d\n", s_idx, sent);
                 continue;
             }
 
             int recvd;
             for (int retry_recv = 0; retry_recv <= RETRIES; retry_recv++) {
                 recvd = sock->recv(rx_buffer, pkt_s);
+                rx_buffer[recvd] = '\0';
                 if (recvd == NSAPI_ERROR_WOULD_BLOCK) {
                     if (tc_exec_time.read() >= time_allotted) {
                         break;
@@ -151,7 +150,7 @@ void NIDDSOCKET_ECHOTEST_NONBLOCK()
                     --retry_recv;
                     continue;
                 } else if (recvd < 0) {
-                    printf("sock.recvfrom returned %d\n", recvd);
+                    tr_info("sock.recvfrom returned %d\n", recvd);
                     TEST_FAIL();
                     break;
                 } else if (recvd == pkt_s) {
@@ -173,7 +172,7 @@ void NIDDSOCKET_ECHOTEST_NONBLOCK()
     // Packet loss up to 30% tolerated
     if (packets_sent > 0) {
         double loss_ratio = 1 - ((double)packets_recv / (double)packets_sent);
-        printf("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n", packets_sent, packets_recv, loss_ratio);
+        tr_info("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n", packets_sent, packets_recv, loss_ratio);
         TEST_ASSERT_DOUBLE_WITHIN(TOLERATED_LOSS_RATIO, EXPECTED_LOSS_RATIO, loss_ratio);
     }
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock->close());

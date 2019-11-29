@@ -324,6 +324,9 @@ void AT_CellularContext::set_credentials(const char *apn, const char *uname, con
 // PDP Context handling
 void AT_CellularContext::delete_current_context()
 {
+    if (_cid <= 0) {
+        return;
+    }
     tr_info("Delete context %d", _cid);
     _at.clear_error();
 
@@ -738,7 +741,6 @@ void AT_CellularContext::do_disconnect()
 
 nsapi_error_t AT_CellularContext::disconnect()
 {
-    tr_info("CellularContext disconnect()");
     if (_is_blocking) {
         do_disconnect();
         return _cb_data.error;

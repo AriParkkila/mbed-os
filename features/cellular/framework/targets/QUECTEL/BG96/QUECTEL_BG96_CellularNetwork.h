@@ -26,6 +26,7 @@ class QUECTEL_BG96_CellularNetwork : public AT_CellularNetwork {
 public:
     QUECTEL_BG96_CellularNetwork(ATHandler &atHandler);
     virtual ~QUECTEL_BG96_CellularNetwork();
+    virtual nsapi_error_t clear();
 
 protected:
     virtual nsapi_error_t set_access_technology_impl(RadioAccessTechnology opRat);

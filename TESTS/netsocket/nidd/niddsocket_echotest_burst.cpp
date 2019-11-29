@@ -72,7 +72,6 @@ void NIDDSOCKET_ECHOTEST_BURST()
     CellularNonIPSocket sock;
     const int TIMEOUT = 5000; // [ms]
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
     sock.set_timeout(TIMEOUT);
     sock.sigio(callback(_sigio_handler, ThisThread::get_id()));
 
@@ -104,7 +103,7 @@ void NIDDSOCKET_ECHOTEST_BURST()
                 }
             } else if (recvd < 0) {
                 pkg_fail += BURST_PKTS - j; // Assume all the following packets of the burst to be lost
-                printf("[%02d] network error %d\n", i, recvd);
+                tr_info("[%02d] network error %d\n", i, recvd);
                 ThisThread::sleep_for(recv_timeout * 1000);
                 recv_timeout *= 2; // Back off,
                 break;
@@ -125,14 +124,14 @@ void NIDDSOCKET_ECHOTEST_BURST()
             ok_bursts++;
         } else {
             drop_bad_packets(sock, TIMEOUT);
-            printf("[%02d] burst failure, rcv %d\n", i, bt_total);
+            tr_info("[%02d] burst failure, rcv %d\n", i, bt_total);
         }
     }
 
     free_tx_buffers();
 
     double loss_ratio = 1 - ((double)(BURST_CNT * BURST_PKTS - pkg_fail) / (double)(BURST_CNT * BURST_PKTS));
-    printf("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n",
+    tr_info("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n",
            BURST_CNT * BURST_PKTS, BURST_CNT * BURST_PKTS - pkg_fail, loss_ratio);
     // Packet loss up to 30% tolerated
     TEST_ASSERT_DOUBLE_WITHIN(TOLERATED_LOSS_RATIO, EXPECTED_LOSS_RATIO, loss_ratio);
@@ -146,7 +145,6 @@ void NIDDSOCKET_ECHOTEST_BURST_NONBLOCK()
 {
     CellularNonIPSocket sock;
     TEST_ASSERT_EQUAL(NSAPI_ERROR_OK, sock.open(CellularContext::get_default_nonip_instance()));
-    poll_pending_messages(sock);
     sock.set_blocking(false);
     sock.sigio(callback(_sigio_handler, ThisThread::get_id()));
 
@@ -191,7 +189,7 @@ void NIDDSOCKET_ECHOTEST_BURST_NONBLOCK()
                     goto PKT_OK;
                 }
             }
-            printf("[bt#%02d] corrupted packet...", i);
+            tr_info("[bt#%02d] corrupted packet...", i);
             pkg_fail++;
             break;
 PKT_OK:
@@ -209,7 +207,7 @@ PKT_OK:
     free_tx_buffers();
 
     double loss_ratio = 1 - ((double)(BURST_CNT * BURST_PKTS - pkg_fail) / (double)(BURST_CNT * BURST_PKTS));
-    printf("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n",
+    tr_info("Packets sent: %d, packets received %d, loss ratio %.2lf\r\n",
            BURST_CNT * BURST_PKTS, BURST_CNT * BURST_PKTS - pkg_fail, loss_ratio);
     // Packet loss up to 30% tolerated
     TEST_ASSERT_DOUBLE_WITHIN(TOLERATED_LOSS_RATIO, EXPECTED_LOSS_RATIO, loss_ratio);

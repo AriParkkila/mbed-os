@@ -170,7 +170,7 @@ void UDPSOCKET_ECHOTEST_NONBLOCK()
                 }
                 --retry_cnt;
             } else {
-                tr_error("[Round#%02d - Sender] error, returned %d", s_idx, sent);
+                tr_warn("[Round#%02d - Sender] error, returned %d", s_idx, sent);
                 continue;
             }
 
@@ -185,7 +185,7 @@ void UDPSOCKET_ECHOTEST_NONBLOCK()
                     --retry_recv;
                     continue;
                 } else if (recvd < 0) {
-                    tr_error("sock.recvfrom returned %d", recvd);
+                    tr_warn("sock.recvfrom returned %d", recvd);
                     TEST_FAIL();
                     break;
                 } else if (recvd == pkt_s) {
