@@ -366,7 +366,11 @@ nsapi_error_t AT_CellularNetwork::set_ciot_optimization_config(CIoT_Supported_Op
                                                                Callback<void(CIoT_Supported_Opt)> network_support_cb)
 {
     _ciotopt_network_support_cb = network_support_cb;
-    return _at.at_cmd_discard("+CCIOTOPT", "=1,", "%d%d", supported_opt, preferred_opt);
+    nsapi_error_t err = _at.at_cmd_discard("+CRTDCP", "=", "%d", 1);
+    if (!err) {
+        err = _at.at_cmd_discard("+CCIOTOPT", "=1,", "%d%d", supported_opt, preferred_opt);
+    }
+    return err;
 }
 
 void AT_CellularNetwork::urc_cciotopti()
@@ -681,19 +685,20 @@ nsapi_error_t AT_CellularNetwork::clear()
             }
             context = context->next;
         }
-#ifdef MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN
-        char pdp_type_str[sizeof("IPV4V6")];
-        if (get_property(PROPERTY_IPV4V6_PDP_TYPE) ||
-                (get_property(PROPERTY_IPV4_PDP_TYPE) && get_property(PROPERTY_IPV6_PDP_TYPE))) {
-            strcpy(pdp_type_str, "IPV4V6");
-        } else if (get_property(PROPERTY_IPV6_PDP_TYPE)) {
-            strcpy(pdp_type_str, "IPV6");
-        } else {
-            strcpy(pdp_type_str, "IP");
-        }
-        _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, pdp_type_str, MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
-#endif
     }
+
+#if defined(MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN) && !MBED_CONF_CELLULAR_CONTROL_PLANE_OPT
+    char pdp_type_str[sizeof("IPV4V6")];
+    if (get_property(PROPERTY_IPV4V6_PDP_TYPE) ||
+            (get_property(PROPERTY_IPV4_PDP_TYPE) && get_property(PROPERTY_IPV6_PDP_TYPE))) {
+        strcpy(pdp_type_str, "IPV4V6");
+    } else if (get_property(PROPERTY_IPV6_PDP_TYPE)) {
+        strcpy(pdp_type_str, "IPV6");
+    } else {
+        strcpy(pdp_type_str, "IP");
+    }
+    _at.at_cmd_discard("+CGDCONT", "=", "%d%s%s", 1, pdp_type_str, MBED_CONF_NSAPI_DEFAULT_CELLULAR_APN);
+#endif
 
     return _at.unlock_return_error();
 }
