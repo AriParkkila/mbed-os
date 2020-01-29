@@ -82,12 +82,15 @@ void UDPSOCKET_ECHOTEST()
 
         fill_tx_buffer_ascii(tx_buffer, BUFF_SIZE);
         int packets_sent_prev = packets_sent;
+        bool is_oversized;
 
         for (int retry_cnt = 0; retry_cnt <= 2; retry_cnt++) {
             memset(rx_buffer, 0, BUFF_SIZE);
             sent = sock.sendto(udp_addr, tx_buffer, pkt_s);
-            if (check_oversized_packets(sent, pkt_s)) {
+            is_oversized = check_oversized_packets(sent, pkt_s);
+            if (is_oversized) {
                 TEST_IGNORE_MESSAGE("This device does not handle oversized packets");
+                break;
             } else if (sent == pkt_s) {
                 packets_sent++;
             } else {
@@ -113,6 +116,9 @@ void UDPSOCKET_ECHOTEST()
             } else {
                 tr_error("[Round#%02d - Receiver] error, returned %d", s_idx, recvd);
             }
+        }
+        if (is_oversized) {
+            continue;
         }
         // Verify received address is correct
         TEST_ASSERT(udp_addr == recv_addr);
@@ -157,11 +163,17 @@ void UDPSOCKET_ECHOTEST_NONBLOCK()
     for (unsigned int s_idx = 0; s_idx < sizeof(pkt_sizes) / sizeof(*pkt_sizes); ++s_idx) {
         int pkt_s = pkt_sizes[s_idx];
         int packets_sent_prev = packets_sent;
+        bool is_oversized;
+
         for (int retry_cnt = 0; retry_cnt <= RETRIES; retry_cnt++) {
             fill_tx_buffer_ascii(tx_buffer, pkt_s);
 
             sent = sock->sendto(udp_addr, tx_buffer, pkt_s);
-            if (sent == pkt_s) {
+            is_oversized = check_oversized_packets(sent, pkt_s);
+            if (is_oversized) {
+                TEST_IGNORE_MESSAGE("This device does not handle oversized packets");
+                break;
+            } else if (sent == pkt_s) {
                 packets_sent++;
             } else if (sent == NSAPI_ERROR_WOULD_BLOCK) {
                 if (tc_exec_time.read() >= time_allotted ||
@@ -196,6 +208,10 @@ void UDPSOCKET_ECHOTEST_NONBLOCK()
             if (recvd == pkt_s) {
                 break;
             }
+        }
+
+        if (is_oversized) {
+            continue;
         }
         // Make sure that at least one packet of every size was sent.
         TEST_ASSERT_TRUE(packets_sent > packets_sent_prev);
