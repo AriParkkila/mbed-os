@@ -17,6 +17,7 @@
 
 #include "UBLOX_PPP.h"
 #include "AT_CellularNetwork.h"
+#include "CellularLog.h"
 
 using namespace mbed;
 using namespace events;
