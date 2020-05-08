@@ -47,7 +47,7 @@ nsapi_error_t UBLOX_AT_CellularNetwork::set_access_technology_impl(RadioAccessTe
     switch (opRat) {
         case RAT_EGPRS:
 #if defined (UBX_MDM_SARA_R412M)
-            _at.at_cmd_discard("+URAT", "=", "%d%d", 9, 8);
+            _at.at_cmd_discard("+URAT", "=", "%d", 9); // Jak: Avoid NB-IoT scan to make modem more responsive
             break;
 #endif
 #if defined(UBX_MDM_SARA_U201)
