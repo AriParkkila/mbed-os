@@ -128,10 +128,12 @@ bool Mutex::trylock_until(uint64_t millisec)
 
 osStatus Mutex::unlock()
 {
+    // Count must be adjusted inside the lock. This would leave it incorrect
+    // on failure, but it only is used for an assert in ConditionVariable,
+    // and a mutex release failure means MBED_ERROR anyway.
+    _count--;
+
     osStatus status = osMutexRelease(_id);
-    if (osOK == status) {
-        _count--;
-    }
 
     if (status != osOK && !mbed_get_error_in_progress()) {
         MBED_ERROR1(MBED_MAKE_ERROR(MBED_MODULE_KERNEL, MBED_ERROR_CODE_MUTEX_UNLOCK_FAILED), "Mutex unlock failed", status);
