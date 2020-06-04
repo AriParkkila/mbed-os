@@ -40,6 +40,10 @@
         "plmn-fallback-auto" : {
             "help": "If manual PLMN is selected, use mode 4 manual/automatic in AT+COPS to try automatic mode if manual selection fails. Set to null to disable",
             "value": null
+        },
+        "context-id-offset" : {
+            "help": "Context ID shall be greater than value e.g. to exclude default initial context, 0 to disable",
+            "value": 1
         }
     }
 }

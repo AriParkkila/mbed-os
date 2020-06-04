@@ -339,12 +339,15 @@ bool AT_CellularContext::get_context()
     _at.cmd_start_stop("+CGDCONT", "?");
     _at.resp_start("+CGDCONT:");
     set_cid(-1);
-    int cid_max = 0; // needed when creating new context
+    int cid_max = MBED_CONF_CELLULAR_CONTEXT_ID_OFFSET; // needed when creating new context
     char apn[MAX_ACCESSPOINT_NAME_LENGTH];
     int apn_len = 0;
 
     while (_at.info_resp()) {
         int cid = _at.read_int();
+        if (MBED_CONF_CELLULAR_CONTEXT_ID_OFFSET != 0 && cid <= MBED_CONF_CELLULAR_CONTEXT_ID_OFFSET) {
+            continue;
+        }
         if (cid > cid_max) {
             cid_max = cid;
         }
