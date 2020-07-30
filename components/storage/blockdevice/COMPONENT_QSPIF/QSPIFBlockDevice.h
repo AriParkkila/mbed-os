@@ -292,14 +292,14 @@ private:
     int _sfdp_parse_sector_map_table(uint32_t sector_map_table_addr, size_t sector_map_table_size);
 
     // Detect the soft reset protocol and reset - returns error if soft reset is not supported
-    int _sfdp_detect_reset_protocol_and_reset(uint8_t *basic_param_table_ptr);
+    int _sfdp_detect_reset_protocol_and_reset(uint8_t *basic_param_table_ptr, int basic_param_table_size);
 
     // Detect fastest read Bus mode supported by device
     int _sfdp_detect_best_bus_read_mode(uint8_t *basic_param_table_ptr, int basic_param_table_size,
                                         bool &set_quad_enable, bool &is_qpi_mode);
 
     // Enable Quad mode if supported (1-1-4, 1-4-4, 4-4-4 bus modes)
-    int _sfdp_set_quad_enabled(uint8_t *basic_param_table_ptr);
+    int _sfdp_set_quad_enabled(uint8_t *basic_param_table_ptr, int basic_param_table_size);
 
     // Enable QPI mode (4-4-4)
     int _sfdp_set_qpi_enabled(uint8_t *basic_param_table_ptr);

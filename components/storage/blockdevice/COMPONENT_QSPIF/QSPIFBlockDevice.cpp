@@ -719,7 +719,7 @@ int QSPIFBlockDevice::_sfdp_parse_basic_param_table(uint32_t basic_table_addr, s
     // Set Page Size (QSPI write must be done on Page limits)
     _page_size_bytes = _sfdp_detect_page_size(param_table, basic_table_size);
 
-    if (_sfdp_detect_reset_protocol_and_reset(param_table) != QSPIF_BD_ERROR_OK) {
+    if (_sfdp_detect_reset_protocol_and_reset(param_table, basic_table_size) != QSPIF_BD_ERROR_OK) {
         tr_error("Init - Detecting reset protocol/resetting failed");
         return -1;
     }
@@ -741,7 +741,7 @@ int QSPIFBlockDevice::_sfdp_parse_basic_param_table(uint32_t basic_table_addr, s
         }
         // Set Quad Enable and QPI Bus modes if Supported
         tr_debug("Init - Setting Quad Enable");
-        if (0 != _sfdp_set_quad_enabled(param_table)) {
+        if (0 != _sfdp_set_quad_enabled(param_table, basic_table_size)) {
             tr_error("Device supports Quad bus, but Quad Enable Failed");
             return -1;
         }
@@ -769,14 +769,18 @@ int QSPIFBlockDevice::_sfdp_parse_basic_param_table(uint32_t basic_table_addr, s
     return 0;
 }
 
-int QSPIFBlockDevice::_sfdp_set_quad_enabled(uint8_t *basic_param_table_ptr)
+int QSPIFBlockDevice::_sfdp_set_quad_enabled(uint8_t *basic_param_table_ptr, int basic_param_table_size)
 {
     uint8_t status_reg_setup[QSPI_MAX_STATUS_REGISTERS] = {0};
     uint8_t status_regs[QSPI_MAX_STATUS_REGISTERS] = {0};
-
-    // QUAD Enable procedure is specified by 3 bits
-    uint8_t qer_value = (basic_param_table_ptr[QSPIF_BASIC_PARAM_TABLE_QER_BYTE] & 0x70) >> 4;
-
+    uint8_t qer_value = 0;
+    if( basic_param_table_size > QSPIF_BASIC_PARAM_TABLE_QER_BYTE) {
+        // QUAD Enable procedure is specified by 3 bits
+        qer_value = (basic_param_table_ptr[QSPIF_BASIC_PARAM_TABLE_QER_BYTE] & 0x70) >> 4;
+    }
+    else {
+        qer_value = 2;
+    }
     switch (qer_value) {
         case 0:
             tr_debug("Device Does not Have a QE Bit, continue based on Read Inst");
@@ -1133,10 +1137,17 @@ int QSPIFBlockDevice::_sfdp_detect_and_enable_4byte_addressing(uint8_t *basic_pa
     return status;
 }
 
-int QSPIFBlockDevice::_sfdp_detect_reset_protocol_and_reset(uint8_t *basic_param_table_ptr)
+int QSPIFBlockDevice::_sfdp_detect_reset_protocol_and_reset(uint8_t *basic_param_table_ptr, int basic_param_table_size)
 {
     int status = QSPIF_BD_ERROR_OK;
-    uint8_t examined_byte = basic_param_table_ptr[QSPIF_BASIC_PARAM_TABLE_SOFT_RESET_BYTE];
+    uint8_t examined_byte;
+    if( basic_param_table_size > QSPIF_BASIC_PARAM_TABLE_SOFT_RESET_BYTE) {
+        examined_byte = basic_param_table_ptr[QSPIF_BASIC_PARAM_TABLE_SOFT_RESET_BYTE];
+    }
+    else{
+        examined_byte = SOFT_RESET_ENABLE_AND_RESET_INST_BITMASK;
+    }
+
 
     // Ignore bit indicating need to exit 0-4-4 mode - should not enter 0-4-4 mode from QSPIFBlockDevice
     if (examined_byte & SOFT_RESET_RESET_INST_BITMASK) {
@@ -1253,8 +1264,8 @@ int QSPIFBlockDevice::_handle_vendor_quirks()
             // 2. Require setting a "fast mode" bit in config register 2 to operate at higher clock rates
             // 3. Should never attempt to enable 4-byte addressing (it causes reads and writes to fail)
             tr_debug("Applying quirks for macronix");
-            _needs_fast_mode = true;
-            _num_status_registers = 3;
+            //_needs_fast_mode = true;
+            //_num_status_registers = 3;
             _read_status_reg_2_inst = QSPIF_INST_RDCR;
             _attempt_4_byte_addressing = false;
             break;
